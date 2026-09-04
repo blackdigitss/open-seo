@@ -1,0 +1,120 @@
+name: Sync upstream
+
+# Watches every-app/open-seo and opens a reviewable PR when it moves.
+# Upstream never lands on `main` on its own — you read the PR and decide.
+on:
+  schedule:
+    - cron: "0 13 * * 1" # Mondays 13:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch upstream
+        run: |
+          git remote add upstream https://github.com/every-app/open-seo.git
+          git fetch upstream --tags
+
+      - name: Check for new commits
+        id: check
+        run: |
+          AHEAD=$(git rev-list --count origin/main..upstream/main)
+          echo "ahead=$AHEAD" >> "$GITHUB_OUTPUT"
+          echo "Upstream is $AHEAD commit(s) ahead."
+          {
+            echo 'log<<COMMITS'
+            git log --oneline --no-decorate origin/main..upstream/main | head -50
+            echo COMMITS
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Attempt merge
+        if: steps.check.outputs.ahead != '0'
+        id: merge
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          BRANCH="sync/upstream-$(date +%Y-%m-%d)"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+          git checkout -B "$BRANCH" origin/main
+          if git merge --no-edit upstream/main; then
+            echo "clean=true" >> "$GITHUB_OUTPUT"
+            git push -f origin "$BRANCH"
+          else
+            echo "clean=false" >> "$GITHUB_OUTPUT"
+            {
+              echo 'conflicts<<EOF'
+              git diff --name-only --diff-filter=U
+              echo EOF
+            } >> "$GITHUB_OUTPUT"
+            git merge --abort
+          fi
+
+      - name: Open PR
+        if: steps.check.outputs.ahead != '0' && steps.merge.outputs.clean == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          EXISTING=$(gh pr list --head "${{ steps.merge.outputs.branch }}" --json number --jq '.[0].number')
+          if [ -n "$EXISTING" ]; then
+            echo "PR #$EXISTING already open."; exit 0
+          fi
+          gh pr create \
+            --base main \
+            --head "${{ steps.merge.outputs.branch }}" \
+            --title "Sync upstream (${{ steps.check.outputs.ahead }} commits)" \
+            --body "$(cat <<'BODY'
+          Merged `upstream/main` cleanly. Review before merging — read
+          `release-notes/` in the diff to see what actually shipped.
+
+          **Checklist**
+          - [ ] Release notes reviewed; the changes are ones we want
+          - [ ] `pnpm install && pnpm build && pnpm test` pass
+          - [ ] Our customizations still intact (see `FORK.md`)
+          - [ ] Redeploy after merge: `pnpm deploy:selfhost --yes`
+
+          ### Upstream commits
+          ```
+          ${{ steps.check.outputs.log }}
+          ```
+          BODY
+          )"
+
+      - name: Open issue on conflict
+        if: steps.check.outputs.ahead != '0' && steps.merge.outputs.clean == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TITLE="Upstream sync needs manual merge (${{ steps.check.outputs.ahead }} commits)"
+          EXISTING=$(gh issue list --search "$TITLE in:title" --state open --json number --jq '.[0].number')
+          if [ -n "$EXISTING" ]; then
+            echo "Issue #$EXISTING already open."; exit 0
+          fi
+          gh issue create --title "$TITLE" --body "$(cat <<'BODY'
+          Upstream moved but the merge conflicts with our customizations.
+
+          Resolve locally:
+          ```bash
+          ./scripts/sync-upstream.sh --merge
+          ```
+
+          ### Conflicting files
+          ```
+          ${{ steps.merge.outputs.conflicts }}
+          ```
+
+          ### Upstream commits
+          ```
+          ${{ steps.check.outputs.log }}
+          ```
+          BODY
+          )"
