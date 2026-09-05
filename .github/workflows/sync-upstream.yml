@@ -1,7 +1,9 @@
 name: Sync upstream
 
-# Watches every-app/open-seo and opens a reviewable PR when it moves.
-# Upstream never lands on `main` on its own — you read the PR and decide.
+# Watches every-app/open-seo RELEASE TAGS and opens a reviewable PR when a new
+# one appears. Upstream never lands on `main` on its own — you read the PR and
+# decide. Tags, not HEAD: the maintainer reverts within the week often enough
+# that Monday's HEAD is not a safe merge target.
 on:
   schedule:
     - cron: "0 13 * * 1" # Mondays 13:00 UTC
@@ -20,21 +22,28 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Fetch upstream
+      - name: Fetch upstream tags
         run: |
           git remote add upstream https://github.com/every-app/open-seo.git
           git fetch upstream --tags
 
-      - name: Check for new commits
+      - name: Find newest release not yet in main
         id: check
         run: |
-          AHEAD=$(git rev-list --count origin/main..upstream/main)
+          TAG=$(git tag --list 'v*' --sort=-version:refname | head -1)
+          AHEAD=$(git rev-list --count origin/main.."$TAG")
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "ahead=$AHEAD" >> "$GITHUB_OUTPUT"
-          echo "Upstream is $AHEAD commit(s) ahead."
+          echo "Newest release $TAG is $AHEAD commit(s) ahead of main."
           {
             echo 'log<<COMMITS'
-            git log --oneline --no-decorate origin/main..upstream/main | head -50
+            git log --oneline --no-decorate origin/main.."$TAG" | head -60
             echo COMMITS
+          } >> "$GITHUB_OUTPUT"
+          {
+            echo 'notes<<NOTES'
+            git diff --name-only "$(git merge-base origin/main "$TAG")".."$TAG" -- release-notes/
+            echo NOTES
           } >> "$GITHUB_OUTPUT"
 
       - name: Attempt merge
@@ -43,10 +52,10 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          BRANCH="sync/upstream-$(date +%Y-%m-%d)"
+          BRANCH="sync/upstream-${{ steps.check.outputs.tag }}"
           echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
           git checkout -B "$BRANCH" origin/main
-          if git merge --no-edit upstream/main; then
+          if git merge --no-edit "${{ steps.check.outputs.tag }}"; then
             echo "clean=true" >> "$GITHUB_OUTPUT"
             git push -f origin "$BRANCH"
           else
@@ -71,16 +80,21 @@ jobs:
           gh pr create \
             --base main \
             --head "${{ steps.merge.outputs.branch }}" \
-            --title "Sync upstream (${{ steps.check.outputs.ahead }} commits)" \
+            --title "Sync upstream ${{ steps.check.outputs.tag }}" \
             --body "$(cat <<'BODY'
-          Merged `upstream/main` cleanly. Review before merging — read
-          `release-notes/` in the diff to see what actually shipped.
+          Merged upstream release `${{ steps.check.outputs.tag }}` cleanly. Read the
+          release notes in the diff before merging — that is what actually shipped.
 
           **Checklist**
           - [ ] Release notes reviewed; the changes are ones we want
           - [ ] `pnpm install && pnpm build && pnpm test` pass
-          - [ ] Our customizations still intact (see `FORK.md`)
+          - [ ] Every hook in `FORK.md` still intact (`grep -rn "FORK:" src *.jsonc`)
           - [ ] Redeploy after merge: `pnpm deploy:selfhost --yes`
+
+          ### Release notes touched
+          ```
+          ${{ steps.check.outputs.notes }}
+          ```
 
           ### Upstream commits
           ```
@@ -94,18 +108,21 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          TITLE="Upstream sync needs manual merge (${{ steps.check.outputs.ahead }} commits)"
+          TITLE="Upstream ${{ steps.check.outputs.tag }} needs a manual merge"
           EXISTING=$(gh issue list --search "$TITLE in:title" --state open --json number --jq '.[0].number')
           if [ -n "$EXISTING" ]; then
             echo "Issue #$EXISTING already open."; exit 0
           fi
           gh issue create --title "$TITLE" --body "$(cat <<'BODY'
-          Upstream moved but the merge conflicts with our customizations.
+          Upstream released `${{ steps.check.outputs.tag }}` but the merge conflicts
+          with our customizations.
 
           Resolve locally:
           ```bash
           ./scripts/sync-upstream.sh --merge
           ```
+          If `src/routeTree.gen.ts` is among the conflicts, regenerate it rather
+          than resolving by hand (the script prints the command).
 
           ### Conflicting files
           ```
