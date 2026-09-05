@@ -7,6 +7,11 @@
     "cli-auth.ts",
     // Site-audit aux worker entry (wrangler.audit.jsonc)
     "src/audit-worker.ts",
+    // FORK: the custom scheduled worker (wrangler.custom.jsonc) and its schema
+    "src/custom/worker.ts",
+    "drizzle-custom.config.ts",
+    "src/db/custom/schema.ts",
+    "src/db/custom/pg.schema.ts",
     "src/start.ts",
     "src/router.tsx",
     "src/routes/**/*.ts",

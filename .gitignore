@@ -44,3 +44,6 @@ dist-sourcemaps/
 
 # Alchemy local state + bundle artifacts (SaaS deploys)
 .alchemy/
+
+# FORK: the custom Worker's env template is tracked like the others
+!.env.custom.example

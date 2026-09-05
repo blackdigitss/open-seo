@@ -1,0 +1,239 @@
+// Web Push from a Worker with nothing but WebCrypto: VAPID (RFC 8292) request
+// signing and aes128gcm payload encryption (RFC 8291 / RFC 8188). ~150 lines
+// instead of a dependency, per FORK.md rule 4.
+import { eq } from "drizzle-orm";
+import { db } from "@/db";
+import { customPushSubscriptions } from "@/db/custom/schema";
+import { isoNow } from "@/custom/lib/time";
+
+type Subscription = typeof customPushSubscriptions.$inferSelect;
+
+export type PushPayload = {
+  title: string;
+  body: string;
+  url?: string;
+  tag?: string;
+};
+
+// WebCrypto wants ArrayBuffer-backed views; TS 5.9 distinguishes them.
+type Bytes = Uint8Array<ArrayBuffer>;
+
+const encoder = new TextEncoder();
+const utf8 = (text: string): Bytes => new Uint8Array(encoder.encode(text));
+
+function b64url(bytes: ArrayBuffer | Uint8Array): string {
+  const arr = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+  let s = "";
+  for (const b of arr) s += String.fromCharCode(b);
+  return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function fromB64url(value: string): Bytes {
+  const padded = value.replace(/-/g, "+").replace(/_/g, "/");
+  const pad =
+    padded.length % 4 === 0 ? "" : "=".repeat(4 - (padded.length % 4));
+  const bin = atob(padded + pad);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+function concat(...parts: Bytes[]): Bytes {
+  const total = parts.reduce((n, p) => n + p.length, 0);
+  const out = new Uint8Array(total);
+  let offset = 0;
+  for (const p of parts) {
+    out.set(p, offset);
+    offset += p.length;
+  }
+  return out;
+}
+
+async function hkdf(
+  salt: Bytes,
+  ikm: Bytes,
+  info: Bytes,
+  length: number,
+): Promise<Bytes> {
+  const key = await crypto.subtle.importKey("raw", ikm, "HKDF", false, [
+    "deriveBits",
+  ]);
+  const bits = await crypto.subtle.deriveBits(
+    { name: "HKDF", hash: "SHA-256", salt, info },
+    key,
+    length * 8,
+  );
+  return new Uint8Array(bits);
+}
+
+/** RFC 8291 encryption of `plaintext` for one subscription. Returns the full
+ *  aes128gcm body (header + single record). */
+async function encryptPayload(
+  plaintext: Bytes,
+  clientPublicKeyB64: string,
+  authSecretB64: string,
+): Promise<Bytes> {
+  const clientPublic = fromB64url(clientPublicKeyB64);
+  const authSecret = fromB64url(authSecretB64);
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+
+  const local = await crypto.subtle.generateKey(
+    { name: "ECDH", namedCurve: "P-256" },
+    true,
+    ["deriveBits"],
+  );
+  const localPublic = new Uint8Array(
+    await crypto.subtle.exportKey("raw", local.publicKey),
+  );
+  const clientKey = await crypto.subtle.importKey(
+    "raw",
+    clientPublic,
+    { name: "ECDH", namedCurve: "P-256" },
+    false,
+    [],
+  );
+  const shared = new Uint8Array(
+    await crypto.subtle.deriveBits(
+      { name: "ECDH", public: clientKey },
+      local.privateKey,
+      256,
+    ),
+  );
+
+  const keyInfo = concat(utf8("WebPush: info\0"), clientPublic, localPublic);
+  const ikm = await hkdf(authSecret, shared, keyInfo, 32);
+  const cek = await hkdf(salt, ikm, utf8("Content-Encoding: aes128gcm\0"), 16);
+  const nonce = await hkdf(salt, ikm, utf8("Content-Encoding: nonce\0"), 12);
+
+  // One record: payload followed by the 0x02 "last record" delimiter.
+  const padded = concat(plaintext, new Uint8Array([2]));
+  const aesKey = await crypto.subtle.importKey("raw", cek, "AES-GCM", false, [
+    "encrypt",
+  ]);
+  const ciphertext = new Uint8Array(
+    await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonce }, aesKey, padded),
+  );
+
+  const recordSize = new Uint8Array(4);
+  new DataView(recordSize.buffer).setUint32(0, 4096);
+  const header = concat(
+    salt,
+    recordSize,
+    new Uint8Array([localPublic.length]),
+    localPublic,
+  );
+  return concat(header, ciphertext);
+}
+
+async function vapidAuthorization(
+  env: Cloudflare.Env,
+  endpoint: string,
+): Promise<string | null> {
+  if (!env.VAPID_PRIVATE_JWK || !env.VAPID_PUBLIC_KEY) return null;
+  const jwk = JSON.parse(env.VAPID_PRIVATE_JWK) as JsonWebKey;
+  const key = await crypto.subtle.importKey(
+    "jwk",
+    jwk,
+    { name: "ECDSA", namedCurve: "P-256" },
+    false,
+    ["sign"],
+  );
+  const audience = new URL(endpoint).origin;
+  const header = b64url(utf8(JSON.stringify({ typ: "JWT", alg: "ES256" })));
+  const claims = b64url(
+    utf8(
+      JSON.stringify({
+        aud: audience,
+        exp: Math.floor(Date.now() / 1000) + 12 * 3600,
+        sub: env.VAPID_SUBJECT ?? "mailto:admin@example.com",
+      }),
+    ),
+  );
+  const signature = new Uint8Array(
+    await crypto.subtle.sign(
+      { name: "ECDSA", hash: "SHA-256" },
+      key,
+      utf8(`${header}.${claims}`),
+    ),
+  );
+  return `vapid t=${header}.${claims}.${b64url(signature)}, k=${env.VAPID_PUBLIC_KEY}`;
+}
+
+export function pushConfigured(env: Cloudflare.Env): boolean {
+  return Boolean(env.VAPID_PRIVATE_JWK && env.VAPID_PUBLIC_KEY);
+}
+
+async function sendToSubscription(
+  env: Cloudflare.Env,
+  subscription: Subscription,
+  payload: PushPayload,
+): Promise<"sent" | "gone" | "failed"> {
+  const authorization = await vapidAuthorization(env, subscription.endpoint);
+  if (!authorization) return "failed";
+  const body = await encryptPayload(
+    utf8(JSON.stringify(payload)),
+    subscription.p256dh,
+    subscription.auth,
+  );
+  const response = await fetch(subscription.endpoint, {
+    method: "POST",
+    headers: {
+      Authorization: authorization,
+      "Content-Encoding": "aes128gcm",
+      "Content-Type": "application/octet-stream",
+      TTL: "86400",
+      Urgency: "normal",
+    },
+    body,
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (response.status === 404 || response.status === 410) return "gone";
+  if (!response.ok) {
+    console.error(
+      "[custom:push] send failed",
+      response.status,
+      await response.text(),
+    );
+    return "failed";
+  }
+  return "sent";
+}
+
+/** Send to every subscription in the organization. Expired subscriptions are
+ *  deleted; failures are stamped but kept. Returns the count delivered. */
+export async function sendPushToOrganization(
+  env: Cloudflare.Env,
+  organizationId: string,
+  payload: PushPayload,
+): Promise<number> {
+  if (!pushConfigured(env)) return 0;
+  const subscriptions = await db
+    .select()
+    .from(customPushSubscriptions)
+    .where(eq(customPushSubscriptions.organizationId, organizationId));
+  let sent = 0;
+  for (const subscription of subscriptions) {
+    try {
+      const result = await sendToSubscription(env, subscription, payload);
+      if (result === "sent") {
+        sent += 1;
+        await db
+          .update(customPushSubscriptions)
+          .set({ lastUsedAt: isoNow(), failedAt: null })
+          .where(eq(customPushSubscriptions.id, subscription.id));
+      } else if (result === "gone") {
+        await db
+          .delete(customPushSubscriptions)
+          .where(eq(customPushSubscriptions.id, subscription.id));
+      } else {
+        await db
+          .update(customPushSubscriptions)
+          .set({ failedAt: isoNow() })
+          .where(eq(customPushSubscriptions.id, subscription.id));
+      }
+    } catch (error) {
+      console.error("[custom:push] error", error);
+    }
+  }
+  return sent;
+}

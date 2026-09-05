@@ -1,0 +1,55 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // The fork's scheduled Worker (src/custom/worker.ts). It binds the SAME D1,
+  // KV and R2 the app's alchemy deploy created for the "selfhost" stage, so
+  // the resource ids below must match those — `node scripts/custom/worker-config.mjs`
+  // resolves them from the Cloudflare API and rewrites this file.
+  //
+  // Deploy:  pnpm custom:deploy   (wrangler deploy -c wrangler.custom.jsonc)
+  // Secrets: pnpm custom:secrets  (reads .env.selfhost + .env.custom)
+  "name": "open-seo-custom",
+  "main": "src/custom/worker.ts",
+  "workers_dev": true,
+  "compatibility_date": "2025-09-02",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "observability": {
+    "enabled": true,
+    "traces": {
+      "enabled": true,
+    },
+  },
+  "triggers": {
+    "crons": ["*/5 * * * *"],
+  },
+  "vars": {
+    "AUTH_MODE": "cloudflare_access",
+    "DATABASE_PROVIDER": "d1",
+    "VAPID_SUBJECT": "mailto:davainwalker1@gmail.com",
+    "CUSTOM_APP_URL": "https://open-seo-selfhost.davainwalker.workers.dev",
+  },
+  "ai": {
+    "binding": "AI",
+  },
+  // Placeholder ids below are overwritten by scripts/custom/worker-config.mjs.
+  "kv_namespaces": [
+    {
+      "binding": "KV",
+      "id": "00000000000000000000000000000000",
+    },
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "open-seo-selfhost",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "drizzle/custom",
+      "migrations_table": "d1_custom_migrations",
+    },
+  ],
+  "r2_buckets": [
+    {
+      "bucket_name": "open-seo-selfhost",
+      "binding": "R2",
+    },
+  ],
+}
