@@ -28,6 +28,8 @@ import { Route as AppTeamRouteImport } from './routes/_app/team'
 import { Route as AppSupportRouteImport } from './routes/_app/support'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppProjectsRouteImport } from './routes/_app/projects'
+import { Route as AppMovesRouteImport } from './routes/_app/moves'
+import { Route as AppInboxRouteImport } from './routes/_app/inbox'
 import { Route as AppBillingRouteImport } from './routes/_app/billing'
 import { Route as AppAiRouteImport } from './routes/_app/ai'
 import { Route as Char91DotwellKnownChar93OpenaiAppsChallengeRouteImport } from './routes/[.well-known]/openai-apps-challenge'
@@ -37,6 +39,8 @@ import { Route as ApiAutumnSplatRouteImport } from './routes/api/autumn/$'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AuthenticatedOnboardingChatRouteImport } from './routes/_authenticated.onboarding.chat'
 import { Route as AppSettingsOrganizationRouteImport } from './routes/_app/settings/organization'
+import { Route as AppSettingsMovesRouteImport } from './routes/_app/settings/moves'
+import { Route as AppMovesMoveIdRouteImport } from './routes/_app/moves.$moveId'
 import { Route as AppHelpOpenrouterApiKeyRouteImport } from './routes/_app/help/openrouter-api-key'
 import { Route as AppHelpDataforseoApiKeyRouteImport } from './routes/_app/help/dataforseo-api-key'
 import { Route as ProjectPProjectIdRouteRouteImport } from './routes/_project/p/$projectId/route'
@@ -49,6 +53,7 @@ import { Route as ProjectPProjectIdSavedRouteImport } from './routes/_project/p/
 import { Route as ProjectPProjectIdSamRouteImport } from './routes/_project/p/$projectId/sam'
 import { Route as ProjectPProjectIdRankTrackingRouteImport } from './routes/_project/p/$projectId/rank-tracking'
 import { Route as ProjectPProjectIdPromptExplorerRouteImport } from './routes/_project/p/$projectId/prompt-explorer'
+import { Route as ProjectPProjectIdMovesRouteImport } from './routes/_project/p/$projectId/moves'
 import { Route as ProjectPProjectIdKeywordsRouteImport } from './routes/_project/p/$projectId/keywords'
 import { Route as ProjectPProjectIdDomainRouteImport } from './routes/_project/p/$projectId/domain'
 import { Route as ProjectPProjectIdBrandLookupRouteImport } from './routes/_project/p/$projectId/brand-lookup'
@@ -154,6 +159,16 @@ const AppProjectsRoute = AppProjectsRouteImport.update({
   path: '/projects',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppMovesRoute = AppMovesRouteImport.update({
+  id: '/moves',
+  path: '/moves',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppInboxRoute = AppInboxRouteImport.update({
+  id: '/inbox',
+  path: '/inbox',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppBillingRoute = AppBillingRouteImport.update({
   id: '/billing',
   path: '/billing',
@@ -201,6 +216,16 @@ const AppSettingsOrganizationRoute = AppSettingsOrganizationRouteImport.update({
   id: '/organization',
   path: '/organization',
   getParentRoute: () => AppSettingsRoute,
+} as any)
+const AppSettingsMovesRoute = AppSettingsMovesRouteImport.update({
+  id: '/moves',
+  path: '/moves',
+  getParentRoute: () => AppSettingsRoute,
+} as any)
+const AppMovesMoveIdRoute = AppMovesMoveIdRouteImport.update({
+  id: '/$moveId',
+  path: '/$moveId',
+  getParentRoute: () => AppMovesRoute,
 } as any)
 const AppHelpOpenrouterApiKeyRoute = AppHelpOpenrouterApiKeyRouteImport.update({
   id: '/help/openrouter-api-key',
@@ -266,6 +291,11 @@ const ProjectPProjectIdPromptExplorerRoute =
     path: '/prompt-explorer',
     getParentRoute: () => ProjectPProjectIdRouteRoute,
   } as any)
+const ProjectPProjectIdMovesRoute = ProjectPProjectIdMovesRouteImport.update({
+  id: '/moves',
+  path: '/moves',
+  getParentRoute: () => ProjectPProjectIdRouteRoute,
+} as any)
 const ProjectPProjectIdKeywordsRoute =
   ProjectPProjectIdKeywordsRouteImport.update({
     id: '/keywords',
@@ -346,6 +376,8 @@ export interface FileRoutesByFullPath {
   '/.well-known/openai-apps-challenge': typeof Char91DotwellKnownChar93OpenaiAppsChallengeRoute
   '/ai': typeof AppAiRoute
   '/billing': typeof AppBillingRoute
+  '/inbox': typeof AppInboxRoute
+  '/moves': typeof AppMovesRouteWithChildren
   '/projects': typeof AppProjectsRoute
   '/settings': typeof AppSettingsRouteWithChildren
   '/support': typeof AppSupportRoute
@@ -359,6 +391,8 @@ export interface FileRoutesByFullPath {
   '/p/$projectId': typeof ProjectPProjectIdRouteRouteWithChildren
   '/help/dataforseo-api-key': typeof AppHelpDataforseoApiKeyRoute
   '/help/openrouter-api-key': typeof AppHelpOpenrouterApiKeyRoute
+  '/moves/$moveId': typeof AppMovesMoveIdRoute
+  '/settings/moves': typeof AppSettingsMovesRoute
   '/settings/organization': typeof AppSettingsOrganizationRoute
   '/onboarding/chat': typeof AuthenticatedOnboardingChatRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -370,6 +404,7 @@ export interface FileRoutesByFullPath {
   '/p/$projectId/brand-lookup': typeof ProjectPProjectIdBrandLookupRoute
   '/p/$projectId/domain': typeof ProjectPProjectIdDomainRoute
   '/p/$projectId/keywords': typeof ProjectPProjectIdKeywordsRoute
+  '/p/$projectId/moves': typeof ProjectPProjectIdMovesRoute
   '/p/$projectId/prompt-explorer': typeof ProjectPProjectIdPromptExplorerRoute
   '/p/$projectId/rank-tracking': typeof ProjectPProjectIdRankTrackingRouteWithChildren
   '/p/$projectId/sam': typeof ProjectPProjectIdSamRoute
@@ -396,6 +431,8 @@ export interface FileRoutesByTo {
   '/.well-known/openai-apps-challenge': typeof Char91DotwellKnownChar93OpenaiAppsChallengeRoute
   '/ai': typeof AppAiRoute
   '/billing': typeof AppBillingRoute
+  '/inbox': typeof AppInboxRoute
+  '/moves': typeof AppMovesRouteWithChildren
   '/projects': typeof AppProjectsRoute
   '/support': typeof AppSupportRoute
   '/team': typeof AppTeamRoute
@@ -407,6 +444,8 @@ export interface FileRoutesByTo {
   '/api/health': typeof ApiHealthRoute
   '/help/dataforseo-api-key': typeof AppHelpDataforseoApiKeyRoute
   '/help/openrouter-api-key': typeof AppHelpOpenrouterApiKeyRoute
+  '/moves/$moveId': typeof AppMovesMoveIdRoute
+  '/settings/moves': typeof AppSettingsMovesRoute
   '/settings/organization': typeof AppSettingsOrganizationRoute
   '/onboarding/chat': typeof AuthenticatedOnboardingChatRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -417,6 +456,7 @@ export interface FileRoutesByTo {
   '/p/$projectId/brand-lookup': typeof ProjectPProjectIdBrandLookupRoute
   '/p/$projectId/domain': typeof ProjectPProjectIdDomainRoute
   '/p/$projectId/keywords': typeof ProjectPProjectIdKeywordsRoute
+  '/p/$projectId/moves': typeof ProjectPProjectIdMovesRoute
   '/p/$projectId/prompt-explorer': typeof ProjectPProjectIdPromptExplorerRoute
   '/p/$projectId/sam': typeof ProjectPProjectIdSamRoute
   '/p/$projectId/saved': typeof ProjectPProjectIdSavedRoute
@@ -445,6 +485,8 @@ export interface FileRoutesById {
   '/.well-known/openai-apps-challenge': typeof Char91DotwellKnownChar93OpenaiAppsChallengeRoute
   '/_app/ai': typeof AppAiRoute
   '/_app/billing': typeof AppBillingRoute
+  '/_app/inbox': typeof AppInboxRoute
+  '/_app/moves': typeof AppMovesRouteWithChildren
   '/_app/projects': typeof AppProjectsRoute
   '/_app/settings': typeof AppSettingsRouteWithChildren
   '/_app/support': typeof AppSupportRoute
@@ -459,6 +501,8 @@ export interface FileRoutesById {
   '/_project/p/$projectId': typeof ProjectPProjectIdRouteRouteWithChildren
   '/_app/help/dataforseo-api-key': typeof AppHelpDataforseoApiKeyRoute
   '/_app/help/openrouter-api-key': typeof AppHelpOpenrouterApiKeyRoute
+  '/_app/moves/$moveId': typeof AppMovesMoveIdRoute
+  '/_app/settings/moves': typeof AppSettingsMovesRoute
   '/_app/settings/organization': typeof AppSettingsOrganizationRoute
   '/_authenticated/onboarding/chat': typeof AuthenticatedOnboardingChatRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -470,6 +514,7 @@ export interface FileRoutesById {
   '/_project/p/$projectId/brand-lookup': typeof ProjectPProjectIdBrandLookupRoute
   '/_project/p/$projectId/domain': typeof ProjectPProjectIdDomainRoute
   '/_project/p/$projectId/keywords': typeof ProjectPProjectIdKeywordsRoute
+  '/_project/p/$projectId/moves': typeof ProjectPProjectIdMovesRoute
   '/_project/p/$projectId/prompt-explorer': typeof ProjectPProjectIdPromptExplorerRoute
   '/_project/p/$projectId/rank-tracking': typeof ProjectPProjectIdRankTrackingRouteWithChildren
   '/_project/p/$projectId/sam': typeof ProjectPProjectIdSamRoute
@@ -498,6 +543,8 @@ export interface FileRouteTypes {
     | '/.well-known/openai-apps-challenge'
     | '/ai'
     | '/billing'
+    | '/inbox'
+    | '/moves'
     | '/projects'
     | '/settings'
     | '/support'
@@ -511,6 +558,8 @@ export interface FileRouteTypes {
     | '/p/$projectId'
     | '/help/dataforseo-api-key'
     | '/help/openrouter-api-key'
+    | '/moves/$moveId'
+    | '/settings/moves'
     | '/settings/organization'
     | '/onboarding/chat'
     | '/api/auth/$'
@@ -522,6 +571,7 @@ export interface FileRouteTypes {
     | '/p/$projectId/brand-lookup'
     | '/p/$projectId/domain'
     | '/p/$projectId/keywords'
+    | '/p/$projectId/moves'
     | '/p/$projectId/prompt-explorer'
     | '/p/$projectId/rank-tracking'
     | '/p/$projectId/sam'
@@ -548,6 +598,8 @@ export interface FileRouteTypes {
     | '/.well-known/openai-apps-challenge'
     | '/ai'
     | '/billing'
+    | '/inbox'
+    | '/moves'
     | '/projects'
     | '/support'
     | '/team'
@@ -559,6 +611,8 @@ export interface FileRouteTypes {
     | '/api/health'
     | '/help/dataforseo-api-key'
     | '/help/openrouter-api-key'
+    | '/moves/$moveId'
+    | '/settings/moves'
     | '/settings/organization'
     | '/onboarding/chat'
     | '/api/auth/$'
@@ -569,6 +623,7 @@ export interface FileRouteTypes {
     | '/p/$projectId/brand-lookup'
     | '/p/$projectId/domain'
     | '/p/$projectId/keywords'
+    | '/p/$projectId/moves'
     | '/p/$projectId/prompt-explorer'
     | '/p/$projectId/sam'
     | '/p/$projectId/saved'
@@ -596,6 +651,8 @@ export interface FileRouteTypes {
     | '/.well-known/openai-apps-challenge'
     | '/_app/ai'
     | '/_app/billing'
+    | '/_app/inbox'
+    | '/_app/moves'
     | '/_app/projects'
     | '/_app/settings'
     | '/_app/support'
@@ -610,6 +667,8 @@ export interface FileRouteTypes {
     | '/_project/p/$projectId'
     | '/_app/help/dataforseo-api-key'
     | '/_app/help/openrouter-api-key'
+    | '/_app/moves/$moveId'
+    | '/_app/settings/moves'
     | '/_app/settings/organization'
     | '/_authenticated/onboarding/chat'
     | '/api/auth/$'
@@ -621,6 +680,7 @@ export interface FileRouteTypes {
     | '/_project/p/$projectId/brand-lookup'
     | '/_project/p/$projectId/domain'
     | '/_project/p/$projectId/keywords'
+    | '/_project/p/$projectId/moves'
     | '/_project/p/$projectId/prompt-explorer'
     | '/_project/p/$projectId/rank-tracking'
     | '/_project/p/$projectId/sam'
@@ -792,6 +852,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProjectsRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/_app/moves': {
+      id: '/_app/moves'
+      path: '/moves'
+      fullPath: '/moves'
+      preLoaderRoute: typeof AppMovesRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/_app/inbox': {
+      id: '/_app/inbox'
+      path: '/inbox'
+      fullPath: '/inbox'
+      preLoaderRoute: typeof AppInboxRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/_app/billing': {
       id: '/_app/billing'
       path: '/billing'
@@ -854,6 +928,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings/organization'
       preLoaderRoute: typeof AppSettingsOrganizationRouteImport
       parentRoute: typeof AppSettingsRoute
+    }
+    '/_app/settings/moves': {
+      id: '/_app/settings/moves'
+      path: '/moves'
+      fullPath: '/settings/moves'
+      preLoaderRoute: typeof AppSettingsMovesRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
+    '/_app/moves/$moveId': {
+      id: '/_app/moves/$moveId'
+      path: '/$moveId'
+      fullPath: '/moves/$moveId'
+      preLoaderRoute: typeof AppMovesMoveIdRouteImport
+      parentRoute: typeof AppMovesRoute
     }
     '/_app/help/openrouter-api-key': {
       id: '/_app/help/openrouter-api-key'
@@ -937,6 +1025,13 @@ declare module '@tanstack/react-router' {
       path: '/prompt-explorer'
       fullPath: '/p/$projectId/prompt-explorer'
       preLoaderRoute: typeof ProjectPProjectIdPromptExplorerRouteImport
+      parentRoute: typeof ProjectPProjectIdRouteRoute
+    }
+    '/_project/p/$projectId/moves': {
+      id: '/_project/p/$projectId/moves'
+      path: '/moves'
+      fullPath: '/p/$projectId/moves'
+      preLoaderRoute: typeof ProjectPProjectIdMovesRouteImport
       parentRoute: typeof ProjectPProjectIdRouteRoute
     }
     '/_project/p/$projectId/keywords': {
@@ -1026,12 +1121,26 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AppMovesRouteChildren {
+  AppMovesMoveIdRoute: typeof AppMovesMoveIdRoute
+}
+
+const AppMovesRouteChildren: AppMovesRouteChildren = {
+  AppMovesMoveIdRoute: AppMovesMoveIdRoute,
+}
+
+const AppMovesRouteWithChildren = AppMovesRoute._addFileChildren(
+  AppMovesRouteChildren,
+)
+
 interface AppSettingsRouteChildren {
+  AppSettingsMovesRoute: typeof AppSettingsMovesRoute
   AppSettingsOrganizationRoute: typeof AppSettingsOrganizationRoute
   AppSettingsIndexRoute: typeof AppSettingsIndexRoute
 }
 
 const AppSettingsRouteChildren: AppSettingsRouteChildren = {
+  AppSettingsMovesRoute: AppSettingsMovesRoute,
   AppSettingsOrganizationRoute: AppSettingsOrganizationRoute,
   AppSettingsIndexRoute: AppSettingsIndexRoute,
 }
@@ -1043,6 +1152,8 @@ const AppSettingsRouteWithChildren = AppSettingsRoute._addFileChildren(
 interface AppRouteRouteChildren {
   AppAiRoute: typeof AppAiRoute
   AppBillingRoute: typeof AppBillingRoute
+  AppInboxRoute: typeof AppInboxRoute
+  AppMovesRoute: typeof AppMovesRouteWithChildren
   AppProjectsRoute: typeof AppProjectsRoute
   AppSettingsRoute: typeof AppSettingsRouteWithChildren
   AppSupportRoute: typeof AppSupportRoute
@@ -1055,6 +1166,8 @@ interface AppRouteRouteChildren {
 const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppAiRoute: AppAiRoute,
   AppBillingRoute: AppBillingRoute,
+  AppInboxRoute: AppInboxRoute,
+  AppMovesRoute: AppMovesRouteWithChildren,
   AppProjectsRoute: AppProjectsRoute,
   AppSettingsRoute: AppSettingsRouteWithChildren,
   AppSupportRoute: AppSupportRoute,
@@ -1129,6 +1242,7 @@ interface ProjectPProjectIdRouteRouteChildren {
   ProjectPProjectIdBrandLookupRoute: typeof ProjectPProjectIdBrandLookupRoute
   ProjectPProjectIdDomainRoute: typeof ProjectPProjectIdDomainRoute
   ProjectPProjectIdKeywordsRoute: typeof ProjectPProjectIdKeywordsRoute
+  ProjectPProjectIdMovesRoute: typeof ProjectPProjectIdMovesRoute
   ProjectPProjectIdPromptExplorerRoute: typeof ProjectPProjectIdPromptExplorerRoute
   ProjectPProjectIdRankTrackingRoute: typeof ProjectPProjectIdRankTrackingRouteWithChildren
   ProjectPProjectIdSamRoute: typeof ProjectPProjectIdSamRoute
@@ -1145,6 +1259,7 @@ const ProjectPProjectIdRouteRouteChildren: ProjectPProjectIdRouteRouteChildren =
     ProjectPProjectIdBrandLookupRoute: ProjectPProjectIdBrandLookupRoute,
     ProjectPProjectIdDomainRoute: ProjectPProjectIdDomainRoute,
     ProjectPProjectIdKeywordsRoute: ProjectPProjectIdKeywordsRoute,
+    ProjectPProjectIdMovesRoute: ProjectPProjectIdMovesRoute,
     ProjectPProjectIdPromptExplorerRoute: ProjectPProjectIdPromptExplorerRoute,
     ProjectPProjectIdRankTrackingRoute:
       ProjectPProjectIdRankTrackingRouteWithChildren,

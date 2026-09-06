@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getProjects } from "@/serverFunctions/projects";
 import {
@@ -14,11 +14,16 @@ import { AuthConfigErrorCard } from "@/client/components/AuthConfigErrorCard";
 import { UnauthenticatedErrorCard } from "@/client/components/UnauthenticatedErrorCard";
 import { SUBSCRIBE_ROUTE } from "@/shared/billing";
 
+// FORK: `/` shows every project's outstanding moves instead of bouncing to
+// whichever one was open last. Lazy so custom code stays out of the eager
+// bundle (see FORK.md).
+const PortfolioHome = lazy(() => import("@/custom/client/home/PortfolioHome"));
+
 export const Route = createFileRoute("/_app/")({
-  component: IndexRedirect,
+  component: IndexHome,
 });
 
-function IndexRedirect() {
+function IndexHome() {
   const navigate = useNavigate();
 
   const { data, error, isError, refetch } = useQuery({
@@ -30,20 +35,14 @@ function IndexRedirect() {
   useEffect(() => {
     if (!data || data.length === 0) return;
 
-    // localStorage is untrusted — only honor the remembered project if it's
-    // actually in the org's list; otherwise fall back to the most recent and
-    // clear the stale id.
+    // FORK: the remembered project is no longer a redirect target — it is only
+    // validated here so a stale id doesn't linger in localStorage.
     const lastProjectId = getLastProjectId();
     const target = data.find((project) => project.id === lastProjectId);
     if (lastProjectId && !target) {
       clearLastProjectId();
     }
-
-    void navigate({
-      to: "/p/$projectId",
-      params: { projectId: (target ?? data[0]).id },
-    });
-  }, [data, navigate]);
+  }, [data]);
 
   useEffect(() => {
     if (getErrorCode(error) !== "PAYMENT_REQUIRED") {
@@ -108,6 +107,22 @@ function IndexRedirect() {
           </p>
         </div>
       </div>
+    );
+  }
+
+  // FORK: projects exist -> the portfolio home; none yet -> the spinner while
+  // the onboarding redirect elsewhere takes over.
+  if (data && data.length > 0) {
+    return (
+      <Suspense
+        fallback={
+          <div className="flex items-center justify-center h-full">
+            <span className="loading loading-spinner loading-md" />
+          </div>
+        }
+      >
+        <PortfolioHome />
+      </Suspense>
     );
   }
 

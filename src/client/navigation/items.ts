@@ -1,6 +1,9 @@
 import {
+  Bell,
   Bookmark,
   Bot,
+  House,
+  ListChecks,
   ClipboardCheck,
   Globe,
   LayoutDashboard,
@@ -21,6 +24,12 @@ const projectNavItems = [
     // Without exact matching, the index path is a prefix of every project
     // route and the Dashboard item would render active everywhere.
     activeOptions: { exact: true, includeSearch: false },
+  },
+  // FORK: the fork's Moves queue for this project.
+  {
+    to: "/p/$projectId/moves" as const,
+    label: "Moves",
+    icon: ListChecks,
   },
   {
     to: "/p/$projectId/keywords" as const,
@@ -75,6 +84,24 @@ const aiNavItem = linkOptions({
   icon: Bot,
 });
 
+// FORK: portfolio home and the notification inbox, both org-wide.
+const homeNavItem = linkOptions({
+  to: "/" as const,
+  label: "Home",
+  icon: House,
+});
+
+const inboxNavItem = linkOptions({
+  to: "/inbox" as const,
+  label: "Inbox",
+  icon: Bell,
+});
+
+export const overviewNavGroup = {
+  label: "Overview",
+  items: [homeNavItem, inboxNavItem],
+};
+
 // Always-visible sidebar group (not project-scoped, unlike the groups below).
 export const connectNavGroup = {
   label: "Connect",
@@ -116,6 +143,8 @@ export function getProjectNavGroups(projectId: string) {
     {
       label: "My Site",
       items: [
+        // FORK: Moves first — it is the page the owner acts from.
+        byPath("/p/$projectId/moves"),
         byPath("/p/$projectId/search-performance"),
         byPath("/p/$projectId/rank-tracking"),
         byPath("/p/$projectId/saved"),

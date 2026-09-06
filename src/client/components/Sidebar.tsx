@@ -19,6 +19,7 @@ import { switchOrganization } from "@/serverFunctions/organization";
 import {
   connectNavGroup,
   getProjectNavGroups,
+  overviewNavGroup,
 } from "@/client/navigation/items";
 import { ProjectSwitcher } from "@/client/features/projects/ProjectSwitcher";
 import { SamSidebarPanel } from "@/client/features/sam/SamSidebarPanel";
@@ -83,6 +84,8 @@ function SidebarNavLink({
 
 export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
   const navGroups = [
+    // FORK: portfolio home + inbox above the project's own pages.
+    overviewNavGroup,
     ...(projectId ? getProjectNavGroups(projectId) : []),
     connectNavGroup,
   ];
