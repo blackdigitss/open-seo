@@ -22,7 +22,15 @@ import {
 
 const MAX_MOVES = 15;
 
-type IssueType = keyof typeof AUDIT_ISSUE_TYPES;
+/** The registry is keyed by known issue type; a row could carry one this
+ *  version doesn't know about, so look it up without asserting. */
+function describeIssue(issueType: string) {
+  const registry: Record<
+    string,
+    (typeof AUDIT_ISSUE_TYPES)[keyof typeof AUDIT_ISSUE_TYPES] | undefined
+  > = AUDIT_ISSUE_TYPES;
+  return registry[issueType];
+}
 
 export async function produceAuditMoves(
   input: ProducerInput,
@@ -52,7 +60,7 @@ export async function produceAuditMoves(
   let drafted = 0;
 
   for (const issue of ranked) {
-    const descriptor = AUDIT_ISSUE_TYPES[issue.issueType as IssueType];
+    const descriptor = describeIssue(issue.issueType);
     if (!descriptor) continue;
     const pageUrl = issue.pageUrl ?? "";
     const dedupeKey = `audit:${issue.issueType}:${pageUrl}`;

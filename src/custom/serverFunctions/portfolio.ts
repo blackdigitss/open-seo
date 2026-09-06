@@ -6,7 +6,7 @@ import { requireAuthenticatedContext } from "@/serverFunctions/middleware";
 import { MovesRepository } from "@/custom/moves/repository";
 import { NotificationsRepository } from "@/custom/notify/inapp";
 
-export type PortfolioProject = {
+type PortfolioProject = {
   id: string;
   name: string;
   domain: string | null;

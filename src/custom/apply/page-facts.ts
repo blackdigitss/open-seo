@@ -15,7 +15,7 @@ export type PageFacts = {
   textSample: string;
 };
 
-export type Evaluation = { ok: boolean; details: Record<string, unknown> };
+type Evaluation = { ok: boolean; details: Record<string, unknown> };
 
 function lengthOk(
   value: string,

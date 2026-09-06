@@ -4,14 +4,22 @@ import {
   localBusinessJsonLd,
   metaDescriptionTag,
   redirectRuleLine,
+  selfCanonical,
   titleTag,
 } from "./snippets";
 
-function parseJsonLd(block: string): unknown {
+type JsonLd = {
+  "@type"?: string;
+  address?: Record<string, unknown>;
+  mainEntity?: Array<{ name?: string }>;
+};
+
+function parseJsonLd(block: string): JsonLd {
   const body = block
     .replace(/^<script type="application\/ld\+json">\n/, "")
     .replace(/\n<\/script>$/, "");
-  return JSON.parse(body);
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the module under test produced this
+  return JSON.parse(body) as JsonLd;
 }
 
 describe("snippets", () => {
@@ -32,9 +40,9 @@ describe("snippets", () => {
       faqPageJsonLd([
         { question: "Do you travel?", answer: "Yes, anywhere in Brooklyn." },
       ]),
-    ) as { "@type": string; mainEntity: Array<{ name: string }> };
+    );
     expect(parsed["@type"]).toBe("FAQPage");
-    expect(parsed.mainEntity[0].name).toBe("Do you travel?");
+    expect(parsed.mainEntity?.[0].name).toBe("Do you travel?");
   });
 
   it("omits address entirely when no address parts are known", () => {
@@ -43,7 +51,7 @@ describe("snippets", () => {
         name: "Walker's Notary",
         url: "https://example.com",
       }),
-    ) as Record<string, unknown>;
+    );
     expect(parsed["@type"]).toBe("LocalBusiness");
     expect(parsed.address).toBeUndefined();
   });
@@ -57,13 +65,19 @@ describe("snippets", () => {
         addressLocality: "Brooklyn",
         addressRegion: "NY",
       }),
-    ) as { "@type": string; address: Record<string, unknown> };
+    );
     expect(parsed["@type"]).toBe("ProfessionalService");
     expect(parsed.address).toEqual({
       "@type": "PostalAddress",
       addressLocality: "Brooklyn",
       addressRegion: "NY",
     });
+  });
+
+  it("emits a self-canonical with the url escaped", () => {
+    expect(selfCanonical("https://example.com/a?b=1&c=2")).toBe(
+      '<link rel="canonical" href="https://example.com/a?b=1&amp;c=2">',
+    );
   });
 
   it("writes a redirect line hosts understand", () => {

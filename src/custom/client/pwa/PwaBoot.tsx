@@ -1,7 +1,7 @@
 import * as React from "react";
 
 /** Registers the service worker once the page has settled. Renders nothing. */
-export function PwaBoot() {
+function PwaBoot() {
   React.useEffect(() => {
     if (typeof window === "undefined") return;
     if (!("serviceWorker" in navigator)) return;

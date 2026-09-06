@@ -23,5 +23,3 @@ export function MovesSettings() {
     </div>
   );
 }
-
-export default MovesSettings;

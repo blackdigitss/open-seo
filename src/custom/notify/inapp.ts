@@ -3,7 +3,7 @@ import { db } from "@/db";
 import { customNotifications } from "@/db/custom/schema";
 import { isoNow } from "@/custom/lib/time";
 
-export type NotificationRow = typeof customNotifications.$inferSelect;
+type NotificationRow = typeof customNotifications.$inferSelect;
 export type NotificationKind = NotificationRow["kind"];
 
 export type NotificationInput = {

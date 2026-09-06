@@ -12,7 +12,7 @@ const SYSTEM = [
   "Never invent prices, awards, review counts, certifications, or service areas.",
 ].join(" ");
 
-export type TitleAndMeta = {
+type TitleAndMeta = {
   title: string;
   metaDescription: string;
   paragraph: string;
@@ -116,49 +116,5 @@ export async function draftRefreshNotes(
   );
   return notes && notes.length > 0
     ? notes.map((n) => `- ${n.trim()}`).join("\n")
-    : fallback;
-}
-
-/** A short content brief for a keyword the site has no page for. */
-export async function draftContentBrief(
-  env: Cloudflare.Env,
-  input: {
-    query: string;
-    businessName: string;
-    voice: string;
-    competitor?: string;
-  },
-): Promise<string> {
-  const fallback = [
-    `Page target: "${input.query}"`,
-    "- Answer the question in the first two sentences.",
-    "- Cover what's included, how long it takes, and what it costs to start.",
-    "- Add three FAQs using the exact wording people search for.",
-    "- Link to the main service page and to contact.",
-  ].join("\n");
-
-  const generated = await generateJson<{ brief?: string[] }>(env, {
-    system: SYSTEM,
-    prompt: [
-      `Business: ${input.businessName}`,
-      input.voice ? `Voice and context:\n${input.voice}` : "",
-      `Target search: "${input.query}"`,
-      input.competitor ? `${input.competitor} ranks for it; we don't.` : "",
-      "",
-      'Return {"brief": [4-6 bullet lines briefing a writer on the page to publish]}.',
-    ]
-      .filter(Boolean)
-      .join("\n"),
-    maxTokens: 450,
-  });
-
-  const brief = generated?.brief?.filter(
-    (b) => typeof b === "string" && b.trim(),
-  );
-  return brief && brief.length > 0
-    ? [
-        `Page target: "${input.query}"`,
-        ...brief.map((b) => `- ${b.trim()}`),
-      ].join("\n")
     : fallback;
 }

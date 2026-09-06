@@ -6,6 +6,7 @@ import { withPgClient } from "@/db";
 import { findJob, jobs } from "./jobs/registry";
 import { runDueJobs, runJobNow } from "./jobs/runner";
 import { getRecentRuns } from "./jobs/status";
+import { KV_WORKER_SEEN_AT } from "./jobs/config-sync";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body, null, 2), {
@@ -19,11 +20,15 @@ export default {
     const url = new URL(request.url);
 
     if (url.pathname === "/health") {
-      const runs = await withPgClient(() => getRecentRuns(30));
+      const [runs, lastTick] = await Promise.all([
+        withPgClient(() => getRecentRuns(30)),
+        env.KV.get(KV_WORKER_SEEN_AT),
+      ]);
       return json({
         ok: true,
         jobs: jobs.map((job) => job.name),
         paused: env.CUSTOM_JOBS_DISABLED === "1",
+        lastTick,
         runs,
       });
     }

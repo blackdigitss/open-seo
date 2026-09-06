@@ -9,12 +9,6 @@ export const listNotifications = createServerFn({ method: "POST" })
     NotificationsRepository.listForOrganization(context.organizationId, 50),
   );
 
-export const getUnreadCount = createServerFn({ method: "POST" })
-  .middleware(requireAuthenticatedContext)
-  .handler(async ({ context }) => ({
-    unread: await NotificationsRepository.unreadCount(context.organizationId),
-  }));
-
 export const markNotificationRead = createServerFn({ method: "POST" })
   .middleware(requireAuthenticatedContext)
   .validator(z.object({ id: z.string().min(1) }))

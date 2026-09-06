@@ -8,9 +8,9 @@ import type { VerifyExpectation } from "@/custom/moves/types";
 // ---------------------------------------------------------------------------
 
 /** Below this, a swing is noise on a site with tens of leads a month. */
-export const MIN_CLICKS = 30;
+const MIN_CLICKS = 30;
 /** A drop this steep is worth a look. */
-export const DROP_RATIO = 0.7;
+const DROP_RATIO = 0.7;
 
 export type DecayAssessment = {
   flagged: boolean;

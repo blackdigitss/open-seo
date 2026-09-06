@@ -6,7 +6,7 @@ const CTR_BY_POSITION = [
   0.012, 0.011, 0.01, 0.009, 0.008, 0.008, 0.007, 0.007,
 ] as const;
 
-export function ctrAtPosition(position: number): number {
+function ctrAtPosition(position: number): number {
   if (!Number.isFinite(position) || position < 1) return CTR_BY_POSITION[1];
   const index = Math.round(position);
   return CTR_BY_POSITION[index] ?? 0.005;

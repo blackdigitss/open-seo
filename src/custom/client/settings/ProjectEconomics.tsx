@@ -6,7 +6,7 @@ import { updateProjectMovesSettings } from "@/custom/serverFunctions/settings";
 import type { ProjectSettings } from "@/custom/settings/repository";
 import { Field, NumberField, TextField } from "./fields";
 
-export type ProjectRow = {
+type ProjectRow = {
   project: { id: string; name: string; domain: string | null };
   settings: ProjectSettings;
 };

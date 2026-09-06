@@ -5,7 +5,7 @@ const LOOPS_API = "https://app.loops.so/api/v1";
 const KV_TEMPLATE_KEY = "custom:loops_briefing_template_id";
 const TEMPLATE_NAME = "OpenSEO plan";
 
-export type EmailMessage = {
+type EmailMessage = {
   subject: string;
   headline: string;
   /** Plain text with line breaks; the template renders it verbatim. */
@@ -50,7 +50,7 @@ const TEMPLATE_LMX = [
 /** Returns the transactional template id, creating and publishing one when
  *  none is configured. Null when there is no API key or provisioning failed
  *  (logged) — email is then skipped and the in-app inbox still has the row. */
-export async function ensureBriefingTemplate(
+async function ensureBriefingTemplate(
   env: Cloudflare.Env,
 ): Promise<string | null> {
   const apiKey = env.LOOPS_API_KEY?.trim();

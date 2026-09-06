@@ -8,22 +8,22 @@ const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const DEFAULT_OPENROUTER_MODEL = "anthropic/claude-sonnet-4.5";
 const DEFAULT_WORKERS_AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 
-export type LlmRequest = {
+type LlmRequest = {
   system: string;
   prompt: string;
   maxTokens?: number;
   temperature?: number;
 };
 
-export type LlmProvider = "openrouter" | "workers-ai" | "none";
+type LlmProvider = "openrouter" | "workers-ai" | "none";
 
-export function llmProvider(env: Cloudflare.Env): LlmProvider {
+function llmProvider(env: Cloudflare.Env): LlmProvider {
   if (env.OPENROUTER_API_KEY?.trim()) return "openrouter";
   if (env.AI) return "workers-ai";
   return "none";
 }
 
-export async function generateText(
+async function generateText(
   env: Cloudflare.Env,
   request: LlmRequest,
 ): Promise<string | null> {
@@ -55,9 +55,9 @@ export async function generateText(
       console.error("[custom:llm] openrouter error", response.status);
       return null;
     }
-    const json = (await response.json()) as {
+    const json: {
       choices?: Array<{ message?: { content?: string } }>;
-    };
+    } = await response.json();
     return json.choices?.[0]?.message?.content?.trim() ?? null;
   }
 
@@ -100,12 +100,14 @@ export async function generateJson<T>(
     .replace(/\s*```$/, "")
     .trim();
   try {
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- model output; every caller treats T as partial and has a fallback
     return JSON.parse(cleaned) as T;
   } catch {
     const start = cleaned.indexOf("{");
     const end = cleaned.lastIndexOf("}");
     if (start >= 0 && end > start) {
       try {
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- as above
         return JSON.parse(cleaned.slice(start, end + 1)) as T;
       } catch {
         return null;

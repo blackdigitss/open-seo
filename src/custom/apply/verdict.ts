@@ -4,13 +4,13 @@
 import type { Verdict } from "@/custom/moves/types";
 
 /** Below this in either window, a percentage change is noise. */
-export const MIN_CLICKS = 30;
+const MIN_CLICKS = 30;
 const IMPROVED = 0.2;
 const DECLINED = -0.2;
 /** How far the change must beat the same period last year to count as ours. */
 const SEASONAL_MARGIN = 0.1;
 
-export type VerdictInput = {
+type VerdictInput = {
   before: number;
   after: number;
   lastYearBefore: number | null;

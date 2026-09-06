@@ -5,13 +5,21 @@
   // the resource ids below must match those — `node scripts/custom/worker-config.mjs`
   // resolves them from the Cloudflare API and rewrites this file.
   //
-  // Deploy:  pnpm custom:deploy   (wrangler deploy -c wrangler.custom.jsonc)
-  // Secrets: pnpm custom:secrets  (reads .env.selfhost + .env.custom)
+  // Deploy and secrets: see docs/FORK_DEPLOY.md
   "name": "open-seo-custom",
   "main": "src/custom/worker.ts",
   "workers_dev": true,
   "compatibility_date": "2025-09-02",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  // Upstream services we call (GSC, project context, audits) transitively pull
+  // in @tanstack/start-server-core, whose dynamic router/start entry imports
+  // only exist in a TanStack Start build. This worker has no router and never
+  // reaches them — alias them to a stub that throws if that ever changes.
+  "alias": {
+    "#tanstack-router-entry": "./src/custom/tanstack-entry-stub.ts",
+    "#tanstack-start-entry": "./src/custom/tanstack-entry-stub.ts",
+    "tanstack-start-manifest:v": "./src/custom/tanstack-entry-stub.ts",
+  },
   "observability": {
     "enabled": true,
     "traces": {

@@ -13,7 +13,7 @@ export function shiftDays(day: string, delta: number): string {
   return dayKey(new Date(Date.parse(`${day}T00:00:00Z`) + delta * DAY_MS));
 }
 
-export function daysBetween(fromDay: string, toDay: string): number {
+function daysBetween(fromDay: string, toDay: string): number {
   return Math.round(
     (Date.parse(`${toDay}T00:00:00Z`) - Date.parse(`${fromDay}T00:00:00Z`)) /
       DAY_MS,

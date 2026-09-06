@@ -9,6 +9,10 @@
     "src/audit-worker.ts",
     // FORK: the custom scheduled worker (wrangler.custom.jsonc) and its schema
     "src/custom/worker.ts",
+    // Served as a static file at /sw.js; no module imports it.
+    "public/sw.js",
+    // Aliased in by wrangler.custom.jsonc, so no import references it.
+    "src/custom/tanstack-entry-stub.ts",
     "drizzle-custom.config.ts",
     "src/db/custom/schema.ts",
     "src/db/custom/pg.schema.ts",

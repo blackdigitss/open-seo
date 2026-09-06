@@ -11,7 +11,7 @@ const ACTIVE_CLASS = "text-primary";
 
 /** Thumb-first navigation below `md`. The desktop sidebar keeps its job above
  *  that breakpoint. */
-export function MobileTabBar() {
+function MobileTabBar() {
   const [projectId, setProjectId] = React.useState<string | null>(null);
   React.useEffect(() => {
     setProjectId(getLastProjectId());

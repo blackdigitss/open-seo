@@ -7,7 +7,6 @@ import { gte, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { customDataforseoCalls } from "@/db/custom/schema";
 import { isoNow, monthKey } from "@/custom/lib/time";
-import { SettingsRepository } from "@/custom/settings/repository";
 
 export async function recordDataforseoCost(
   billing: { path: string[]; costUsd: number } | null | undefined,
@@ -41,33 +40,9 @@ export async function monthToDateSpendUsd(now = new Date()): Promise<number> {
   return Number(row?.total ?? 0);
 }
 
-export type SpendDecision = {
-  allowed: boolean;
-  spentUsd: number;
-  budgetUsd: number;
-  reason: string | null;
-};
-
-/** May a scheduled job spend roughly `estimateUsd` more this month? The cap is
- *  the organization's monthly budget for scheduled work. */
-export async function canSpend(
-  organizationId: string,
-  estimateUsd: number,
-  now = new Date(),
-): Promise<SpendDecision> {
-  const settings = await SettingsRepository.getOrg(organizationId);
-  const spentUsd = await monthToDateSpendUsd(now);
-  const budgetUsd = settings.monthlyBudgetUsd;
-  if (spentUsd + estimateUsd > budgetUsd) {
-    return {
-      allowed: false,
-      spentUsd,
-      budgetUsd,
-      reason: `Would exceed the $${budgetUsd}/month scheduled budget ($${spentUsd.toFixed(2)} spent, ~$${estimateUsd.toFixed(2)} more)`,
-    };
-  }
-  return { allowed: true, spentUsd, budgetUsd, reason: null };
-}
+// NOTE: the spend *cap* (canSpend) lands with the first job that actually
+// spends on a schedule — see docs/FORK_DEPLOY.md. Recording and reporting are
+// live now so the history exists before the cap needs it.
 
 /** True when the Worker has a real DataForSEO key (the deploy uses a placeholder
  *  until the owner adds one). */

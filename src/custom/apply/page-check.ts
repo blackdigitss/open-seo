@@ -15,7 +15,7 @@ function collectJsonLdTypes(raw: string): string[] {
       return;
     }
     if (!node || typeof node !== "object") return;
-    const record = node as Record<string, unknown>;
+    const record: Record<string, unknown> = { ...node };
     const type = record["@type"];
     if (typeof type === "string") types.push(type);
     if (Array.isArray(type)) {

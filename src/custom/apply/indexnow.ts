@@ -2,7 +2,7 @@
 // actually changed, instead of waiting to be recrawled. Free, and one call.
 const ENDPOINT = "https://api.indexnow.org/indexnow";
 
-export function keyFileUrl(host: string, key: string): string {
+function keyFileUrl(host: string, key: string): string {
   return `https://${host}/${key}.txt`;
 }
 

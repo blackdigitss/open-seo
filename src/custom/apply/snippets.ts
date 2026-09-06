@@ -1,7 +1,7 @@
 // Copy-ready output. Every Move hands the owner the exact thing to paste, so
 // "apply" is a paste and a deploy rather than a research task.
 
-export function escapeAttribute(value: string): string {
+function escapeAttribute(value: string): string {
   return value
     .replace(/&/g, "&amp;")
     .replace(/"/g, "&quot;")
@@ -46,7 +46,7 @@ export function faqPageJsonLd(
   });
 }
 
-export type LocalBusinessInput = {
+type LocalBusinessInput = {
   name: string;
   url: string;
   type?: string;

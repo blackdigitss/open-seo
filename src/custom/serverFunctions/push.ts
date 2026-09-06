@@ -1,6 +1,5 @@
 import { env } from "cloudflare:workers";
 import { createServerFn } from "@tanstack/react-start";
-import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import { customPushSubscriptions } from "@/db/custom/schema";
@@ -56,16 +55,6 @@ export const savePushSubscription = createServerFn({ method: "POST" })
           failedAt: null,
         },
       });
-    return { ok: true };
-  });
-
-export const removePushSubscription = createServerFn({ method: "POST" })
-  .middleware(requireAuthenticatedContext)
-  .validator(z.object({ endpoint: z.string().url().max(2000) }))
-  .handler(async ({ data }) => {
-    await db
-      .delete(customPushSubscriptions)
-      .where(eq(customPushSubscriptions.endpoint, data.endpoint));
     return { ok: true };
   });
 

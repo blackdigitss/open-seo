@@ -6,7 +6,7 @@ import { BucketBadge, RiskBadge } from "@/custom/client/moves/MoveBadges";
 
 /** Every business on one screen, ordered by what needs you — replacing the
  *  redirect that used to drop you into whichever project you saw last. */
-export function PortfolioHome() {
+function PortfolioHome() {
   const portfolioQuery = useQuery({
     queryKey: ["custom", "portfolio"],
     queryFn: () => getPortfolio(),

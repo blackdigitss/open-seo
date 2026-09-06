@@ -16,7 +16,7 @@ export const DEFAULT_ECONOMICS: SiteEconomics = {
   siteConversionRate: 0.02,
 };
 
-export type ScoreInput = {
+type ScoreInput = {
   // 0..1 relative importance within the site (percentile, severity, …).
   ordinal: number;
   // Monthly clicks the move could add or protect; 0 when unknown.
@@ -26,7 +26,7 @@ export type ScoreInput = {
   pageRole?: "money" | "hub" | "spoke" | "other" | null;
 };
 
-export type ScoreResult = {
+type ScoreResult = {
   score: number;
   valueBucket: MoveValueBucket | null;
   monthlyValueUsd: number;
@@ -38,7 +38,7 @@ function moneyToUnit(usd: number): number {
   return 1 - Math.exp(-usd / 150);
 }
 
-export function bucketFor(monthlyValueUsd: number): MoveValueBucket | null {
+function bucketFor(monthlyValueUsd: number): MoveValueBucket | null {
   if (monthlyValueUsd <= 0) return null;
   if (monthlyValueUsd < 50) return "low";
   if (monthlyValueUsd <= 250) return "mid";

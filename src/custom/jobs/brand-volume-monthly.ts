@@ -1,10 +1,13 @@
+import { dataforseoConfigured } from "@/custom/budget";
 import type { JobDefinition } from "./runner";
 import { monthlyOn } from "./schedule";
 
-// STUB — filled in by the intelligence task. Monthly search volume for each
-// project's brand terms, persisted as a trend.
+// Monthly brand search volume, as a trend.
 export const brandVolumeMonthlyJob: JobDefinition = {
   name: "brand_volume_monthly",
   due: monthlyOn(4, 8),
-  run: async () => ({ skipped: "not implemented" }),
+  run: async ({ env }) => {
+    if (!dataforseoConfigured(env)) return { skipped: "no DataForSEO key" };
+    return { skipped: "not implemented" };
+  },
 };

@@ -12,7 +12,10 @@
     "web",
     "src/routeTree.gen.ts",
     "worker-configuration.d.ts",
-    "scripts"
+    "scripts",
+    // FORK: a service worker, not app code — its globals (self, clients,
+    // registration) aren't in scope for the app's lint config.
+    "public/sw.js"
   ],
   "rules": {
     "react/react-in-jsx-scope": "off",

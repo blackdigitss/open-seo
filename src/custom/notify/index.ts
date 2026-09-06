@@ -10,7 +10,7 @@ import { imessageConfigured, sendImessage } from "./imessage";
 import { NotificationsRepository, type NotificationInput } from "./inapp";
 import { pushConfigured, sendPushToOrganization } from "./push";
 
-export type DeliveryReport = {
+type DeliveryReport = {
   notificationId: string;
   email: number;
   push: number;
@@ -28,7 +28,7 @@ async function recipientEmails(organizationId: string): Promise<string[]> {
 
 /** Markdown → the plain text transports want. Good enough for our own
  *  short, list-shaped bodies. */
-export function plainText(markdown: string): string {
+function plainText(markdown: string): string {
   return markdown
     .replace(/\*\*(.+?)\*\*/g, "$1")
     .replace(/\[(.+?)\]\((.+?)\)/g, "$1 ($2)")

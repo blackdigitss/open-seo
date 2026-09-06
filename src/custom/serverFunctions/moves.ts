@@ -1,10 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { AppError } from "@/server/lib/errors";
-import {
-  requireAuthenticatedContext,
-  requireProjectContext,
-} from "@/serverFunctions/middleware";
+import { requireAuthenticatedContext } from "@/serverFunctions/middleware";
 import { MOVE_STATUSES } from "@/db/custom/schema";
 import { MovesRepository } from "@/custom/moves/repository";
 import type { MoveStatus } from "@/custom/moves/types";
@@ -77,13 +74,3 @@ export const reopenMove = createServerFn({ method: "POST" })
     if (!move) throw new AppError("NOT_FOUND", "Move not found");
     return MovesRepository.setStatus(move.id, "open");
   });
-
-export const listProjectMoves = createServerFn({ method: "POST" })
-  .middleware(requireProjectContext)
-  .validator(z.object({ projectId: z.string().min(1) }))
-  .handler(async ({ context }) =>
-    MovesRepository.listForOrganization(context.organizationId, {
-      projectId: context.projectId,
-      limit: 200,
-    }),
-  );

@@ -156,6 +156,16 @@ async function meterDataforseoCall<T>(
 
   if (!isHostedMode) {
     const result = await execute();
+    // FORK: self-host drops the billing envelope, so nothing can tell you what
+    // the data costs. Record it for the fork's budget guard
+    // (src/custom/budget.ts). Dynamic import keeps custom code out of the eager
+    // bundle; never let bookkeeping break the call that paid for it.
+    try {
+      const { recordDataforseoCost } = await import("@/custom/budget");
+      await recordDataforseoCost(result.billing, creditFeature);
+    } catch (error) {
+      console.error("[custom:budget] could not record cost", error);
+    }
     return result.data;
   }
 
