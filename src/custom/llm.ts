@@ -23,7 +23,7 @@ function llmProvider(env: Cloudflare.Env): LlmProvider {
   return "none";
 }
 
-async function generateText(
+export async function generateText(
   env: Cloudflare.Env,
   request: LlmRequest,
 ): Promise<string | null> {

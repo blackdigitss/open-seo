@@ -97,7 +97,7 @@ export const movesRefreshJob: JobDefinition = {
 
       const producers: Array<{
         source: MoveInput["source"];
-        run: () => Promise<{ moves: MoveInput[]; liveKeys: string[] }>;
+        run: () => Promise<{ moves: MoveInput[]; liveKeys: string[] | null }>;
       }> = [
         { source: "striking_distance", run: () => produceOpenings(input) },
         { source: "decay", run: () => produceDecay(input) },
@@ -123,11 +123,15 @@ export const movesRefreshJob: JobDefinition = {
           created += outcome.created;
           refreshed += outcome.refreshed;
           fresh.push(...outcome.fresh);
-          resolved += await MovesRepository.resolveMissing(
-            project.id,
-            producer.source,
-            result.liveKeys,
-          );
+          // null = the producer had no data to judge by; resolving open moves
+          // on no data would silently discard real findings.
+          if (result.liveKeys !== null) {
+            resolved += await MovesRepository.resolveMissing(
+              project.id,
+              producer.source,
+              result.liveKeys,
+            );
+          }
         } catch (error) {
           projectLog(`${producer.source} failed`, {
             error: errorMessage(error),

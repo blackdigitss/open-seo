@@ -1,4 +1,5 @@
 import {
+  Archive,
   Bell,
   Bookmark,
   Bot,
@@ -25,11 +26,16 @@ const projectNavItems = [
     // route and the Dashboard item would render active everywhere.
     activeOptions: { exact: true, includeSearch: false },
   },
-  // FORK: the fork's Moves queue for this project.
+  // FORK: the fork's Moves queue and dated-analysis history for this project.
   {
     to: "/p/$projectId/moves" as const,
     label: "Moves",
     icon: ListChecks,
+  },
+  {
+    to: "/p/$projectId/history" as const,
+    label: "History",
+    icon: Archive,
   },
   {
     to: "/p/$projectId/keywords" as const,
@@ -145,6 +151,7 @@ export function getProjectNavGroups(projectId: string) {
       items: [
         // FORK: Moves first — it is the page the owner acts from.
         byPath("/p/$projectId/moves"),
+        byPath("/p/$projectId/history"),
         byPath("/p/$projectId/search-performance"),
         byPath("/p/$projectId/rank-tracking"),
         byPath("/p/$projectId/saved"),

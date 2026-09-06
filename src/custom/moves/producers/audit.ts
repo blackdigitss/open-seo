@@ -35,9 +35,19 @@ function describeIssue(issueType: string) {
 export async function produceAuditMoves(
   input: ProducerInput,
 ): Promise<ProducerResult> {
-  const audit = await AuditRepository.getLatestAuditForProject(input.projectId);
-  if (!audit || audit.status !== "completed")
-    return { moves: [], liveKeys: [] };
+  // getLatestAuditForProject returns the newest audit of ANY status; an audit
+  // that is still running (or failed) says nothing about the site, so judge by
+  // the newest completed one.
+  const audits = await AuditRepository.getAuditsByProject(input.projectId);
+  const audit = audits.find((candidate) => candidate.status === "completed");
+  if (!audit) return { moves: [], liveKeys: null };
+
+  // Upstream's #290 distinction: pages with zero issues means the checks ran
+  // and the site is clean (resolve everything open); zero pages means the
+  // audit predates the issue checks and carries no data (resolve nothing).
+  if (!(await AuditRepository.hasPagesForAudit(audit.id))) {
+    return { moves: [], liveKeys: null };
+  }
 
   const issues = await AuditRepository.getIssuesForAudit(audit.id, {});
   if (issues.length === 0) return { moves: [], liveKeys: [] };

@@ -19,8 +19,11 @@ export type ProducerInput = {
 };
 
 /** `liveKeys` is every dedupe key this producer still sees; anything open from
- *  the same source that is missing gets resolved. */
-export type ProducerResult = { moves: MoveInput[]; liveKeys: string[] };
+ *  the same source that is missing gets resolved. `null` means the producer
+ *  had no data to judge by (no completed audit, no grant) — resolve nothing,
+ *  the same way upstream distinguishes "no issues found" from "no issue data"
+ *  (their #290). */
+export type ProducerResult = { moves: MoveInput[]; liveKeys: string[] | null };
 
 /** Trailing slashes and case make the same page look like two. */
 export function normalizeUrl(url: string): string {

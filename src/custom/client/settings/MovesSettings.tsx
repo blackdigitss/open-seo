@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { getMovesSettings } from "@/custom/serverFunctions/settings";
 import { NotificationSettings } from "./NotificationSettings";
+import { SpendSummary } from "./SpendSummary";
 import { ProjectEconomics } from "./ProjectEconomics";
 
 export function MovesSettings() {
@@ -17,6 +18,7 @@ export function MovesSettings() {
 
   return (
     <div className="space-y-8">
+      <SpendSummary />
       {/* Keyed so a save that returns new server state reseeds the form. */}
       <NotificationSettings key={org.updatedAt} initial={org} />
       {projects.length > 0 ? <ProjectEconomics rows={projects} /> : null}

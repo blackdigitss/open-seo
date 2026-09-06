@@ -329,6 +329,42 @@ a phone.
 **FORK.md says "push fixes upstream as PRs"** — Simplicity, Product, Domain.
 Accepted; fixed in the same commit as this file (D19).
 
+## Upstream PR review — 2026-09-06
+
+The four newest upstream PRs, reviewed for ideas worth carrying:
+
+- **#296 (design-system adoption, closed unmerged).** Their maintainer closed
+  it; adopting a design system they rejected would be pure conflict. Skipped.
+- **#295 (agent-doc alignment, open).** Internal to upstream's contributor
+  tooling; nothing product-facing. Skipped.
+- **#294 (DataForSEO-free degradation, open).** Good ideas — Google Trends as
+  a free signal, Bing Webmaster and PageSpeed fallbacks, graceful degradation
+  without a key — but it rewrites the exact hot files our conventions keep us
+  out of (research tools, DomainService, keyword UI). Building it in parallel
+  guarantees a bad merge. Left to upstream per D21; it arrives via tag sync.
+  Its principle (free data before paid) is already how the fork works: GSC and
+  GA4 drive the Moves engine, paid pulls are scheduled and budgeted.
+- **#290 (clean audit vs no audit data, open).** Their fix is in the MCP tool
+  and arrives via sync — but the same bug class existed in our audit producer,
+  which resolved every open audit Move whenever the latest audit had no issue
+  rows, including when the latest audit was still running or predated the
+  issue checks. Fixed on our side: the producer judges by the newest
+  _completed_ audit, and a producer now returns `liveKeys: null` ("no data,
+  resolve nothing") as distinct from `[]` ("checks ran, site is clean").
+
+## What the caching audit found — 2026-09-06
+
+Verified before building anything: upstream already serves repeats of the same
+paid lookup from an R2 cache — SERP and domain surfaces for 12h, keyword
+research and brand lookup for 24h, prompt explorer and business categories for
+7d — and already shows a fetched-at date on saved keywords, brand lookup and
+backlinks. What it does not do is keep history (each cache key is overwritten
+and expires; their #266) or show what anything cost. The fork adds exactly
+those two: permanent dated snapshots per analysis (`custom_snapshots`, the
+History page) and real spend by feature (`custom_dataforseo_calls`, shown in
+Settings → Moves and the weekly plan). No second cache layer was added: one
+below upstream's would silently serve older data than their surfaces promise.
+
 ## Open questions
 
 - **Q1.** Does an installed iOS PWA complete a Cloudflare Access re-login in
