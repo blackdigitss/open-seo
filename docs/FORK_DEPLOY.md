@@ -66,9 +66,19 @@ Answer **OAuth**, then yes to _"Customize OAuth scopes?"_, and tick
 it draws interactive menus, so it will appear to do nothing if the prompts
 cannot render. Run it directly in Terminal, in the repo directory.
 
-If Zero Trust has never been enabled on the account, the deploy creates the team
-for you (named after the workers.dev subdomain, `davainwalker`). Enabling it
-first at <https://one.dash.cloudflare.com> also works.
+**Zero Trust must already exist.** The deploy only creates a team when the API
+reports _no organization_; a brand-new account instead returns _"Access is not
+enabled"_, which alchemy treats as fatal. Create it once — either click **Enable
+Access** at <https://one.dash.cloudflare.com>, or with the logged-in token:
+
+```bash
+TOK=$(python3 -c "import json,os;print(json.load(open(os.path.expanduser('~/.alchemy/credentials/default/cf-oauth.json')))['access'])")
+curl -X POST "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/access/organizations" \
+  -H "Authorization: Bearer $TOK" -H "Content-Type: application/json" \
+  -d '{"name":"davainwalker","auth_domain":"davainwalker.cloudflareaccess.com"}'
+```
+
+This account's team is `davainwalker.cloudflareaccess.com`, created 2026-09-06.
 
 ## Deploy
 
@@ -80,17 +90,19 @@ pnpm deploy:selfhost --yes
 node scripts/custom/worker-config.mjs --stage selfhost \
   --app-url https://open-seo-selfhost.davainwalker.workers.dev
 
-# 3. Our tables (alchemy applies drizzle/custom/ with the app's migrations, but
-#    this makes it explicit and is how you re-run them)
-pnpm exec wrangler d1 migrations apply DB --remote -c wrangler.custom.jsonc
-
-# 4. Keys for notifications, then push every secret the jobs need
+# 3. Keys for notifications, then push every secret the jobs need
 node scripts/custom/vapid.mjs          # writes VAPID keys into .env.custom
 node scripts/custom/secrets.mjs        # .env.selfhost + .env.custom -> Worker
 
-# 5. The scheduled Worker
+# 4. The scheduled Worker
 pnpm exec wrangler deploy -c wrangler.custom.jsonc
 ```
+
+Our tables need no separate migration step: alchemy walks `drizzle/`
+recursively, so step 1 applies `drizzle/custom/` alongside upstream's. Running
+`wrangler d1 migrations apply` against `d1_custom_migrations` afterwards fails
+with "table already exists" — it keeps its own ledger and doesn't know alchemy
+already ran them.
 
 Check it: `curl https://open-seo-custom.davainwalker.workers.dev/health` lists
 the jobs and the last runs.

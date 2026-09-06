@@ -42,21 +42,21 @@
   "kv_namespaces": [
     {
       "binding": "KV",
-      "id": "00000000000000000000000000000000",
+      "id": "1597cbb99fe440d89a7df395da5de7e4",
     },
   ],
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "open-seo-selfhost",
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_name": "open-seo-db-selfhost",
+      "database_id": "771a7e0f-fef8-431f-a2a1-9160916a72e1",
       "migrations_dir": "drizzle/custom",
       "migrations_table": "d1_custom_migrations",
     },
   ],
   "r2_buckets": [
     {
-      "bucket_name": "open-seo-selfhost",
+      "bucket_name": "open-seo-r2-selfhost",
       "binding": "R2",
     },
   ],
