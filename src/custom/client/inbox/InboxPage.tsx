@@ -7,6 +7,7 @@ import {
   markNotificationRead,
 } from "@/custom/serverFunctions/notifications";
 import { relativeTime } from "@/custom/client/moves/format";
+import { EnableNotifications } from "@/custom/client/pwa/EnableNotifications";
 
 const KIND_ICON = {
   weekly_plan: CalendarCheck,
@@ -57,6 +58,8 @@ export function InboxPage() {
             </button>
           ) : null}
         </header>
+
+        <EnableNotifications />
 
         {notificationsQuery.isLoading ? (
           <div className="space-y-2">

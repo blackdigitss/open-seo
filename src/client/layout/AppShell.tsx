@@ -1,4 +1,6 @@
 import * as React from "react";
+// FORK: lazy so custom UI stays out of the eager bundle.
+const MobileTabBar = React.lazy(() => import("@/custom/client/MobileTabBar"));
 import { Link, useLocation } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Menu } from "lucide-react";
@@ -137,10 +139,18 @@ export function AuthenticatedAppLayout({
 
             {banner}
 
-            <div className="min-h-0 flex-1 overflow-auto">{children}</div>
+            {/* FORK: pb-16 clears the mobile tab bar. */}
+            <div className="min-h-0 flex-1 overflow-auto pb-16 md:pb-0">
+              {children}
+            </div>
           </div>
         </div>
       </div>
+
+      {/* FORK: thumb-first navigation below md; the sidebar owns desktop. */}
+      <React.Suspense fallback={null}>
+        <MobileTabBar />
+      </React.Suspense>
 
       <MobileSidebarDrawer
         open={drawerOpen}

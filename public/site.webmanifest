@@ -1,6 +1,9 @@
 {
+  "id": "/",
   "name": "OpenSEO",
   "short_name": "OpenSEO",
+  "start_url": "/",
+  "scope": "/",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",
@@ -15,5 +18,6 @@
   ],
   "theme_color": "#0a0f0d",
   "background_color": "#0a0f0d",
-  "display": "standalone"
+  "display": "standalone",
+  "orientation": "portrait"
 }

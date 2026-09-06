@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 /// <reference types="vite/client" />
 import {
   ClientOnly,
@@ -84,7 +85,13 @@ export const Route = createRootRoute({
         href: "/favicon-16x16.png",
       },
       { rel: "icon", type: "image/x-icon", href: "/favicon.ico" },
-      { rel: "manifest", href: "/site.webmanifest" },
+      // FORK: behind Cloudflare Access the manifest is fetched without
+      // cookies and gets the login redirect instead; use-credentials fixes it.
+      {
+        rel: "manifest",
+        href: "/site.webmanifest",
+        crossOrigin: "use-credentials",
+      },
     ],
     scripts: [],
   }),
@@ -94,8 +101,19 @@ export const Route = createRootRoute({
   shellComponent: RootDocument,
 });
 
+// FORK: registers the service worker (offline + Web Push). Lazy and
+// client-only so it stays out of the eager worker bundle.
+const PwaBoot = lazy(() => import("@/custom/client/pwa/PwaBoot"));
+
 function AppLayout() {
-  return <Outlet />;
+  return (
+    <>
+      <Suspense fallback={null}>
+        <PwaBoot />
+      </Suspense>
+      <Outlet />
+    </>
+  );
 }
 
 function PostHogBootstrap() {

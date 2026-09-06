@@ -100,10 +100,17 @@ The complete inventory. Update it in the same commit as the hook.
 
 | File                                  | Hook                                                  | Status       |
 | ------------------------------------- | ----------------------------------------------------- | ------------ |
-| `src/client/navigation/items.ts`      | Nav entries for portfolio home and Moves              | planned      |
-| `src/routes/__root.tsx`               | Manifest `crossOrigin`, service worker, tab bar mount | planned      |
-| `knip.jsonc`                          | Entry for `src/custom/worker.ts`                      | planned      |
-| `src/server/lib/dataforseo/client.ts` | One line recording cost in the self-host branch       | planned (P4) |
+| `src/routes/_app/index.tsx`           | `/` renders the portfolio home instead of redirecting | done         |
+| `src/client/navigation/items.ts`      | Moves in the project group; Home + Inbox group        | done         |
+| `src/client/components/Sidebar.tsx`   | Renders the overview nav group                        | done         |
+| `src/routes/__root.tsx`               | Manifest `crossOrigin`, service-worker boot           | done         |
+| `src/client/layout/AppShell.tsx`      | Mobile tab bar, bottom padding for it                 | done         |
+| `knip.jsonc`                          | Entries for the custom worker, schema and config      | done         |
+| `.gitignore`                          | Tracks `.env.custom.example`                          | done         |
+| `src/server/lib/dataforseo/client.ts` | Record real cost in self-host mode                    | planned (P4) |
+
+`src/routeTree.gen.ts` also changes, but it is generated — regenerate it with a
+build rather than resolving it by hand.
 
 ## Deploying
 
