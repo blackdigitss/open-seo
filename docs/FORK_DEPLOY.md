@@ -11,7 +11,26 @@ of the app. The API token currently in the environment cannot: it has Workers,
 D1, KV, R2 and Zones, but nothing for Zero Trust, and it cannot grant itself
 more. Pick either route.
 
-### A. A scoped API token (recommended — non-interactive forever)
+### A. Enable Zero Trust, then set `TEAM_DOMAIN` (fastest — try this first)
+
+The existing token answers `/access/apps` with _"Access is not enabled"_ (a
+real answer — it has the permission) but `/access/organizations` with
+_"Authentication error"_ (it does not). Setting `TEAM_DOMAIN` skips the
+organization lookup entirely, so the existing token may be enough.
+
+1. Open <https://one.dash.cloudflare.com>, pick a team name (free plan is
+   fine). The team domain is `<team>.cloudflareaccess.com`.
+2. Add it to `.env.selfhost`:
+
+   ```
+   TEAM_DOMAIN=https://<team>.cloudflareaccess.com
+   ```
+
+3. Deploy. If it still fails on Access, use B or C.
+
+Leave `POLICY_AUD` unset — the deploy creates the application and derives it.
+
+### B. A scoped API token (non-interactive forever)
 
 At <https://dash.cloudflare.com/profile/api-tokens> → **Create Token** → **Create
 Custom Token**, add these permissions:
@@ -36,7 +55,7 @@ export CLOUDFLARE_ACCOUNT_ID=41365bfb73692b66110ccfe32bde100d
 
 Put both in your shell profile so later deploys just work.
 
-### B. OAuth login
+### C. OAuth login
 
 ```bash
 pnpm alchemy login --configure
