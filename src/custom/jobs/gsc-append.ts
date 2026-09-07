@@ -13,7 +13,13 @@ import { dailyAfter } from "./schedule";
 
 const GSC_LAG_DAYS = 3;
 const BACKFILL_DAYS = 28;
-const CHUNK = 100;
+// A Worker invocation has a subrequest budget; a full 28-day backfill (2 GSC
+// calls + dozens of D1 inserts per day) blows past it. Fill at most this many
+// missing days per run — successive cron ticks converge on complete history.
+const MAX_DAYS_PER_RUN = 10;
+// D1 allows at most 100 bound parameters per statement; these rows carry 7
+// columns each, so 12 rows (84 params) per INSERT is the safe chunk.
+const CHUNK = 12;
 
 async function appendDay(projectId: string, day: string): Promise<number> {
   const [pageRows, queryRows] = await Promise.all([
@@ -84,55 +90,58 @@ async function appendDay(projectId: string, day: string): Promise<number> {
   return pageValues.length + queryValues.length;
 }
 
+/** The dates missing from the trailing window, oldest first. */
+async function missingDays(
+  projectId: string,
+  newest: string,
+): Promise<string[]> {
+  const present = new Set(
+    (
+      await db
+        .selectDistinct({ date: customGscDaily.date })
+        .from(customGscDaily)
+        .where(eq(customGscDaily.projectId, projectId))
+    ).map((row) => row.date),
+  );
+  const missing: string[] = [];
+  for (let offset = BACKFILL_DAYS - 1; offset >= 0; offset--) {
+    const day = shiftDays(newest, -offset);
+    if (!present.has(day)) missing.push(day);
+  }
+  return missing;
+}
+
 export const gscAppendJob: JobDefinition = {
   name: "gsc_append",
   due: dailyAfter(8),
   run: async ({ log }) => {
-    const day = shiftDays(dayKey(new Date()), -GSC_LAG_DAYS);
+    const newest = shiftDays(dayKey(new Date()), -GSC_LAG_DAYS);
     const rows = await db
       .select({ id: projects.id, name: projects.name })
       .from(projects)
       .where(sql`${projects.archivedAt} is null`);
 
-    let projectsAppended = 0;
+    let daysAppended = 0;
     let rowsWritten = 0;
     let skipped = 0;
+    let remaining = 0;
 
     for (const project of rows) {
       try {
-        const [existing] = await db
-          .select({ count: sql<number>`count(*)` })
-          .from(customGscDaily)
-          .where(eq(customGscDaily.projectId, project.id));
-        const isFirstRun = Number(existing?.count ?? 0) === 0;
-
-        if (isFirstRun) {
-          // One-off: fill the trailing window so decay has a baseline today
-          // rather than in a month.
-          for (let offset = BACKFILL_DAYS - 1; offset >= 0; offset--) {
-            rowsWritten += await appendDay(project.id, shiftDays(day, -offset));
-          }
-          log("backfilled", { project: project.name, days: BACKFILL_DAYS });
-        } else {
-          const [already] = await db
-            .select({ count: sql<number>`count(*)` })
-            .from(customGscDaily)
-            .where(
-              and(
-                eq(customGscDaily.projectId, project.id),
-                eq(customGscDaily.date, day),
-              ),
-            );
-          if (Number(already?.count ?? 0) > 0) continue;
+        const missing = await missingDays(project.id, newest);
+        const batch = missing.slice(0, MAX_DAYS_PER_RUN);
+        remaining += missing.length - batch.length;
+        for (const day of batch) {
           rowsWritten += await appendDay(project.id, day);
+          daysAppended += 1;
         }
-        projectsAppended += 1;
       } catch (error) {
         if (error instanceof GscNotConnectedError) {
           skipped += 1;
           continue;
         }
-        // One project's bad grant must not stop the rest.
+        // One project's bad grant must not stop the rest; whatever this run
+        // managed is kept and the next tick resumes at the next missing day.
         log("failed", {
           project: project.name,
           error: error instanceof Error ? error.message : String(error),
@@ -140,6 +149,6 @@ export const gscAppendJob: JobDefinition = {
       }
     }
 
-    return { day, projectsAppended, rowsWritten, skipped };
+    return { newest, daysAppended, rowsWritten, skipped, remaining };
   },
 };
