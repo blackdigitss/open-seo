@@ -116,8 +116,10 @@ export function AuthenticatedAppLayout({
     };
   }, [shouldShowMissingSeoApiKeyModal]);
 
+  // FORK: pt-[env(safe-area-inset-top)] keeps the installed app's content
+  // below the iPhone status bar; it is 0 in ordinary browsers.
   return (
-    <div className="flex h-[100dvh] bg-base-200">
+    <div className="flex h-[100dvh] bg-base-200 pt-[env(safe-area-inset-top)]">
       <div className="hidden shrink-0 md:block">
         <Sidebar projectId={sidebarProjectId} />
       </div>

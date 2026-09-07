@@ -1,10 +1,17 @@
 import * as React from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronRight, Inbox } from "lucide-react";
+import {
+  ChevronRight,
+  ClipboardCheck,
+  Inbox,
+  Sparkles,
+  TrendingUp,
+  Wrench,
+} from "lucide-react";
 import { listMoves } from "@/custom/serverFunctions/moves";
-import type { MoveStatus } from "@/custom/moves/types";
-import { BucketBadge, RiskBadge, ScoreBar, StatusBadge } from "./MoveBadges";
+import type { MoveRow, MoveStatus } from "@/custom/moves/types";
+import { BucketBadge, RiskBadge, StatusBadge } from "./MoveBadges";
 import { pathOf } from "./format";
 
 const FILTERS: Array<{ label: string; statuses: MoveStatus[] }> = [
@@ -12,6 +19,93 @@ const FILTERS: Array<{ label: string; statuses: MoveStatus[] }> = [
   { label: "In flight", statuses: ["applied", "verified", "verify_failed"] },
   { label: "Done", statuses: ["concluded", "skipped", "resolved"] },
 ];
+
+/** What kind of work this is, at a glance. */
+const SOURCE_META: Record<
+  MoveRow["source"],
+  { icon: typeof Wrench; tint: string; label: string }
+> = {
+  striking_distance: {
+    icon: TrendingUp,
+    tint: "bg-primary/10 text-primary",
+    label: "Opening",
+  },
+  opportunity: {
+    icon: Sparkles,
+    tint: "bg-primary/10 text-primary",
+    label: "Opening",
+  },
+  decay: { icon: Wrench, tint: "bg-warning/15 text-warning", label: "Refresh" },
+  audit: { icon: Wrench, tint: "bg-warning/15 text-warning", label: "Fix" },
+  review: {
+    icon: Wrench,
+    tint: "bg-warning/15 text-warning",
+    label: "Reviews",
+  },
+  rank: { icon: TrendingUp, tint: "bg-primary/10 text-primary", label: "Rank" },
+  setup: {
+    icon: ClipboardCheck,
+    tint: "bg-base-content/10 text-base-content/70",
+    label: "Setup",
+  },
+  manual: {
+    icon: ClipboardCheck,
+    tint: "bg-base-content/10 text-base-content/70",
+    label: "Task",
+  },
+};
+
+function MoveCard({
+  move,
+  showProject,
+}: {
+  move: MoveRow & { projectName: string; projectDomain: string | null };
+  showProject: boolean;
+}) {
+  const meta = SOURCE_META[move.source] ?? SOURCE_META.manual;
+  const Icon = meta.icon;
+  const where = [
+    showProject ? (move.projectDomain ?? move.projectName) : null,
+    move.targetUrl ? pathOf(move.targetUrl) : null,
+    move.targetQuery ? `"${move.targetQuery}"` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
+  return (
+    <Link
+      to="/moves/$moveId"
+      params={{ moveId: move.id }}
+      className="flex items-center gap-3 rounded-xl border border-base-300 bg-base-100 p-3.5 transition-colors hover:border-primary/40 active:bg-base-200/60"
+    >
+      <span
+        className={`flex size-10 shrink-0 items-center justify-center rounded-full ${meta.tint}`}
+        aria-hidden
+      >
+        <Icon className="size-5" />
+      </span>
+
+      <span className="min-w-0 flex-1">
+        {where ? (
+          <span className="block truncate font-mono text-[11px] text-base-content/50">
+            {where}
+          </span>
+        ) : null}
+        <span className="block font-medium leading-snug">{move.title}</span>
+        <span className="mt-0.5 block text-sm leading-snug text-base-content/60">
+          {move.reason}
+        </span>
+        <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
+          <BucketBadge bucket={move.valueBucket} />
+          <RiskBadge risk={move.riskTier} />
+          <StatusBadge status={move.status} />
+        </span>
+      </span>
+
+      <ChevronRight className="size-5 shrink-0 text-base-content/30" />
+    </Link>
+  );
+}
 
 export function MovesList({ projectId }: { projectId?: string }) {
   const [filter, setFilter] = React.useState(0);
@@ -44,7 +138,7 @@ export function MovesList({ projectId }: { projectId?: string }) {
       {movesQuery.isLoading ? (
         <div className="space-y-2">
           {[0, 1, 2].map((n) => (
-            <div key={n} className="skeleton h-20 w-full" />
+            <div key={n} className="skeleton h-24 w-full" />
           ))}
         </div>
       ) : moves.length === 0 ? (
@@ -59,34 +153,10 @@ export function MovesList({ projectId }: { projectId?: string }) {
           </div>
         </div>
       ) : (
-        <ul className="flex flex-col gap-2">
+        <ul className="flex flex-col gap-2.5">
           {moves.map((move) => (
             <li key={move.id}>
-              <Link
-                to="/moves/$moveId"
-                params={{ moveId: move.id }}
-                className="flex min-h-[44px] items-start gap-3 rounded-lg border border-base-300 bg-base-100 p-3 transition-colors hover:border-primary/40 hover:bg-base-200/40"
-              >
-                <div className="min-w-0 flex-1 space-y-1">
-                  <div className="font-mono text-[11px] uppercase tracking-wide text-base-content/50">
-                    {move.projectDomain ?? move.projectName}
-                    {move.targetUrl ? ` · ${pathOf(move.targetUrl)}` : ""}
-                  </div>
-                  <div className="font-medium leading-snug">{move.title}</div>
-                  <div className="text-sm text-base-content/60">
-                    {move.reason}
-                  </div>
-                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                    <BucketBadge bucket={move.valueBucket} />
-                    <RiskBadge risk={move.riskTier} />
-                    <StatusBadge status={move.status} />
-                  </div>
-                </div>
-                <div className="flex shrink-0 flex-col items-end gap-2 pt-1">
-                  <ScoreBar score={move.score} />
-                  <ChevronRight className="size-4 text-base-content/30" />
-                </div>
-              </Link>
+              <MoveCard move={move} showProject={!projectId} />
             </li>
           ))}
         </ul>

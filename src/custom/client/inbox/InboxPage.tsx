@@ -6,6 +6,7 @@ import {
   markAllNotificationsRead,
   markNotificationRead,
 } from "@/custom/serverFunctions/notifications";
+import { Markdown } from "@/client/components/Markdown";
 import { relativeTime } from "@/custom/client/moves/format";
 import { EnableNotifications } from "@/custom/client/pwa/EnableNotifications";
 
@@ -99,9 +100,9 @@ export function InboxPage() {
                         {relativeTime(notification.createdAt)}
                       </span>
                     </div>
-                    <p className="whitespace-pre-wrap text-sm text-base-content/60">
+                    <Markdown className="text-sm text-base-content/70">
                       {notification.body}
-                    </p>
+                    </Markdown>
                   </div>
                 </div>
               );

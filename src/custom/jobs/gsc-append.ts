@@ -1,7 +1,7 @@
 // Search Console keeps 16 months and the app fetches it live and throws it
 // away. This appends the finalized day to our own tables so decay, verdicts
 // and "what worked" have history the moment they need it.
-import { and, eq, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { projects } from "@/db/schema";
 import { customGscDaily, customGscQueryDaily } from "@/db/custom/schema";

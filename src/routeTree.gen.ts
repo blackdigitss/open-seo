@@ -40,7 +40,7 @@ import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AuthenticatedOnboardingChatRouteImport } from './routes/_authenticated.onboarding.chat'
 import { Route as AppSettingsOrganizationRouteImport } from './routes/_app/settings/organization'
 import { Route as AppSettingsMovesRouteImport } from './routes/_app/settings/moves'
-import { Route as AppMovesMoveIdRouteImport } from './routes/_app/moves.$moveId'
+import { Route as AppMovesMoveIdRouteImport } from './routes/_app/moves_.$moveId'
 import { Route as AppHelpOpenrouterApiKeyRouteImport } from './routes/_app/help/openrouter-api-key'
 import { Route as AppHelpDataforseoApiKeyRouteImport } from './routes/_app/help/dataforseo-api-key'
 import { Route as ProjectPProjectIdRouteRouteImport } from './routes/_project/p/$projectId/route'
@@ -224,9 +224,9 @@ const AppSettingsMovesRoute = AppSettingsMovesRouteImport.update({
   getParentRoute: () => AppSettingsRoute,
 } as any)
 const AppMovesMoveIdRoute = AppMovesMoveIdRouteImport.update({
-  id: '/$moveId',
-  path: '/$moveId',
-  getParentRoute: () => AppMovesRoute,
+  id: '/moves_/$moveId',
+  path: '/moves/$moveId',
+  getParentRoute: () => AppRouteRoute,
 } as any)
 const AppHelpOpenrouterApiKeyRoute = AppHelpOpenrouterApiKeyRouteImport.update({
   id: '/help/openrouter-api-key',
@@ -384,7 +384,7 @@ export interface FileRoutesByFullPath {
   '/ai': typeof AppAiRoute
   '/billing': typeof AppBillingRoute
   '/inbox': typeof AppInboxRoute
-  '/moves': typeof AppMovesRouteWithChildren
+  '/moves': typeof AppMovesRoute
   '/projects': typeof AppProjectsRoute
   '/settings': typeof AppSettingsRouteWithChildren
   '/support': typeof AppSupportRoute
@@ -440,7 +440,7 @@ export interface FileRoutesByTo {
   '/ai': typeof AppAiRoute
   '/billing': typeof AppBillingRoute
   '/inbox': typeof AppInboxRoute
-  '/moves': typeof AppMovesRouteWithChildren
+  '/moves': typeof AppMovesRoute
   '/projects': typeof AppProjectsRoute
   '/support': typeof AppSupportRoute
   '/team': typeof AppTeamRoute
@@ -495,7 +495,7 @@ export interface FileRoutesById {
   '/_app/ai': typeof AppAiRoute
   '/_app/billing': typeof AppBillingRoute
   '/_app/inbox': typeof AppInboxRoute
-  '/_app/moves': typeof AppMovesRouteWithChildren
+  '/_app/moves': typeof AppMovesRoute
   '/_app/projects': typeof AppProjectsRoute
   '/_app/settings': typeof AppSettingsRouteWithChildren
   '/_app/support': typeof AppSupportRoute
@@ -510,7 +510,7 @@ export interface FileRoutesById {
   '/_project/p/$projectId': typeof ProjectPProjectIdRouteRouteWithChildren
   '/_app/help/dataforseo-api-key': typeof AppHelpDataforseoApiKeyRoute
   '/_app/help/openrouter-api-key': typeof AppHelpOpenrouterApiKeyRoute
-  '/_app/moves/$moveId': typeof AppMovesMoveIdRoute
+  '/_app/moves_/$moveId': typeof AppMovesMoveIdRoute
   '/_app/settings/moves': typeof AppSettingsMovesRoute
   '/_app/settings/organization': typeof AppSettingsOrganizationRoute
   '/_authenticated/onboarding/chat': typeof AuthenticatedOnboardingChatRoute
@@ -679,7 +679,7 @@ export interface FileRouteTypes {
     | '/_project/p/$projectId'
     | '/_app/help/dataforseo-api-key'
     | '/_app/help/openrouter-api-key'
-    | '/_app/moves/$moveId'
+    | '/_app/moves_/$moveId'
     | '/_app/settings/moves'
     | '/_app/settings/organization'
     | '/_authenticated/onboarding/chat'
@@ -949,12 +949,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsMovesRouteImport
       parentRoute: typeof AppSettingsRoute
     }
-    '/_app/moves/$moveId': {
-      id: '/_app/moves/$moveId'
-      path: '/$moveId'
+    '/_app/moves_/$moveId': {
+      id: '/_app/moves_/$moveId'
+      path: '/moves/$moveId'
       fullPath: '/moves/$moveId'
       preLoaderRoute: typeof AppMovesMoveIdRouteImport
-      parentRoute: typeof AppMovesRoute
+      parentRoute: typeof AppRouteRoute
     }
     '/_app/help/openrouter-api-key': {
       id: '/_app/help/openrouter-api-key'
@@ -1141,18 +1141,6 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AppMovesRouteChildren {
-  AppMovesMoveIdRoute: typeof AppMovesMoveIdRoute
-}
-
-const AppMovesRouteChildren: AppMovesRouteChildren = {
-  AppMovesMoveIdRoute: AppMovesMoveIdRoute,
-}
-
-const AppMovesRouteWithChildren = AppMovesRoute._addFileChildren(
-  AppMovesRouteChildren,
-)
-
 interface AppSettingsRouteChildren {
   AppSettingsMovesRoute: typeof AppSettingsMovesRoute
   AppSettingsOrganizationRoute: typeof AppSettingsOrganizationRoute
@@ -1173,7 +1161,7 @@ interface AppRouteRouteChildren {
   AppAiRoute: typeof AppAiRoute
   AppBillingRoute: typeof AppBillingRoute
   AppInboxRoute: typeof AppInboxRoute
-  AppMovesRoute: typeof AppMovesRouteWithChildren
+  AppMovesRoute: typeof AppMovesRoute
   AppProjectsRoute: typeof AppProjectsRoute
   AppSettingsRoute: typeof AppSettingsRouteWithChildren
   AppSupportRoute: typeof AppSupportRoute
@@ -1181,13 +1169,14 @@ interface AppRouteRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
   AppHelpDataforseoApiKeyRoute: typeof AppHelpDataforseoApiKeyRoute
   AppHelpOpenrouterApiKeyRoute: typeof AppHelpOpenrouterApiKeyRoute
+  AppMovesMoveIdRoute: typeof AppMovesMoveIdRoute
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppAiRoute: AppAiRoute,
   AppBillingRoute: AppBillingRoute,
   AppInboxRoute: AppInboxRoute,
-  AppMovesRoute: AppMovesRouteWithChildren,
+  AppMovesRoute: AppMovesRoute,
   AppProjectsRoute: AppProjectsRoute,
   AppSettingsRoute: AppSettingsRouteWithChildren,
   AppSupportRoute: AppSupportRoute,
@@ -1195,6 +1184,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppIndexRoute: AppIndexRoute,
   AppHelpDataforseoApiKeyRoute: AppHelpDataforseoApiKeyRoute,
   AppHelpOpenrouterApiKeyRoute: AppHelpOpenrouterApiKeyRoute,
+  AppMovesMoveIdRoute: AppMovesMoveIdRoute,
 }
 
 const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(

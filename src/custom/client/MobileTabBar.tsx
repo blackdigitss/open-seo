@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Bell, House, ListChecks, PanelsTopLeft } from "lucide-react";
 import { getLastProjectId } from "@/client/lib/active-project";
 import { getInboxBadge } from "@/custom/serverFunctions/push";
+import { getPortfolio } from "@/custom/serverFunctions/portfolio";
 
 const LINK_CLASS =
   "flex min-h-[44px] flex-1 flex-col items-center justify-center gap-0.5 py-1 text-[11px] text-base-content/60 transition-colors";
@@ -12,10 +13,20 @@ const ACTIVE_CLASS = "text-primary";
 /** Thumb-first navigation below `md`. The desktop sidebar keeps its job above
  *  that breakpoint. */
 function MobileTabBar() {
-  const [projectId, setProjectId] = React.useState<string | null>(null);
+  const [lastProjectId, setLastProjectId] = React.useState<string | null>(null);
   React.useEffect(() => {
-    setProjectId(getLastProjectId());
+    setLastProjectId(getLastProjectId());
   }, []);
+  // A fresh install has an empty localStorage (its own partition), so fall
+  // back to the portfolio's top project rather than hiding the tab.
+  const portfolioQuery = useQuery({
+    queryKey: ["custom", "portfolio"],
+    queryFn: () => getPortfolio(),
+    enabled: lastProjectId === null,
+    staleTime: 5 * 60_000,
+  });
+  const projectId =
+    lastProjectId ?? portfolioQuery.data?.projects[0]?.id ?? null;
 
   const badgeQuery = useQuery({
     queryKey: ["custom", "inboxBadge"],

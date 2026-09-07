@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { MoveDetail } from "@/custom/client/moves/MoveDetail";
 
-export const Route = createFileRoute("/_app/moves/$moveId")({
+export const Route = createFileRoute("/_app/moves_/$moveId")({
   component: MoveDetailPage,
 });
 

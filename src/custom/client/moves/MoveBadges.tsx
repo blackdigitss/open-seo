@@ -41,15 +41,3 @@ export function StatusBadge({ status }: { status: string }) {
     </span>
   );
 }
-
-/** How this Move ranks against the others, at a glance. */
-export function ScoreBar({ score }: { score: number }) {
-  return (
-    <progress
-      className="progress progress-primary h-1 w-16"
-      value={Math.round(score * 100)}
-      max={100}
-      aria-label={`Priority ${Math.round(score * 100)} of 100`}
-    />
-  );
-}
