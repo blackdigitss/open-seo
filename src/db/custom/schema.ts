@@ -174,6 +174,11 @@ export const customProjectSettings = sqliteTable("custom_project_settings", {
   // Null → derived from GA4 when connected, else 0.02.
   siteConversionRate: real("site_conversion_rate"),
   monthlyBudgetUsd: real("monthly_budget_usd").notNull().default(10),
+  // Safe-tier moves get applied at the edge without asking, for domains the
+  // SEO edge Worker covers. Off until the owner flips it.
+  autoApplySafe: integer("auto_apply_safe", { mode: "boolean" })
+    .notNull()
+    .default(false),
   reviewsBusinessName: text("reviews_business_name"),
   reviewsLocationName: text("reviews_location_name"),
   indexnowKey: text("indexnow_key"),

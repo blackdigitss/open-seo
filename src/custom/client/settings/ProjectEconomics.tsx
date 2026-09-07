@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { updateProjectMovesSettings } from "@/custom/serverFunctions/settings";
 import type { ProjectSettings } from "@/custom/settings/repository";
-import { Field, NumberField, TextField } from "./fields";
+import { Field, NumberField, TextField, Toggle } from "./fields";
 
 type ProjectRow = {
   project: { id: string; name: string; domain: string | null };
@@ -16,6 +16,7 @@ type FormState = {
   closeRate: number;
   siteConversionRate: string;
   monthlyBudgetUsd: number;
+  autoApplySafe: boolean;
   reviewsBusinessName: string;
   reviewsLocationName: string;
 };
@@ -29,6 +30,7 @@ function toForm(settings: ProjectSettings): FormState {
         ? ""
         : String(settings.siteConversionRate),
     monthlyBudgetUsd: settings.monthlyBudgetUsd,
+    autoApplySafe: settings.autoApplySafe,
     reviewsBusinessName: settings.reviewsBusinessName ?? "",
     reviewsLocationName: settings.reviewsLocationName ?? "",
   };
@@ -60,6 +62,7 @@ export function ProjectEconomics({ rows }: { rows: ProjectRow[] }) {
           closeRate: form.closeRate,
           siteConversionRate: rate === "" ? null : Number(rate),
           monthlyBudgetUsd: form.monthlyBudgetUsd,
+          autoApplySafe: form.autoApplySafe,
           reviewsBusinessName: form.reviewsBusinessName.trim() || null,
           reviewsLocationName: form.reviewsLocationName.trim() || null,
         },
@@ -144,6 +147,15 @@ export function ProjectEconomics({ rows }: { rows: ProjectRow[] }) {
           hint='e.g. "New York,New York,United States"'
           value={form.reviewsLocationName}
           onChange={(reviewsLocationName) => patch({ reviewsLocationName })}
+        />
+      </div>
+
+      <div className="rounded-lg border border-base-300 px-4">
+        <Toggle
+          label="Auto-apply safe moves"
+          hint="Title and description fixes go live at the edge overnight, each verified the next morning. Only on sites the SEO edge covers; risky moves always wait for you."
+          checked={form.autoApplySafe}
+          onChange={(autoApplySafe) => patch({ autoApplySafe })}
         />
       </div>
 

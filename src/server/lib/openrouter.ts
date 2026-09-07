@@ -40,6 +40,18 @@ export function buildChatAgentModel(
   apiKey: string,
   modelId?: string,
 ): LanguageModelV3 {
+  // FORK: a Google AI Studio key (they all start with "AIza") routes the chat
+  // agents to Gemini's OpenAI-compatible endpoint instead of OpenRouter — same
+  // provider client, different baseURL. OpenRouter-specific options (usage
+  // accounting, provider routing) don't apply there.
+  if (apiKey.startsWith("AIza")) {
+    const gemini = createOpenRouter({
+      apiKey,
+      baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
+    });
+    return gemini(modelId?.trim() || "gemini-2.5-flash");
+  }
+
   const model = modelId ?? DEFAULT_CHAT_AGENT_MODEL;
   const openrouter = createOpenRouter({ apiKey });
 

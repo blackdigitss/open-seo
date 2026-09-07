@@ -34,6 +34,7 @@
     "DATABASE_PROVIDER": "d1",
     "VAPID_SUBJECT": "mailto:davainwalker1@gmail.com",
     "CUSTOM_APP_URL": "https://open-seo-selfhost.davainwalker.workers.dev",
+    "CUSTOM_EDGE_HOSTS": "walkersnotary.com,www.walkersnotary.com",
   },
   "ai": {
     "binding": "AI",

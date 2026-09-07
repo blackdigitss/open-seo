@@ -22,6 +22,7 @@ const PROJECT_DEFAULTS = {
   closeRate: DEFAULT_ECONOMICS.closeRate,
   siteConversionRate: null,
   monthlyBudgetUsd: 10,
+  autoApplySafe: false,
   reviewsBusinessName: null,
   reviewsLocationName: null,
   indexnowKey: null,

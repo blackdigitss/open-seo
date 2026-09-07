@@ -40,7 +40,9 @@ function EvidenceRow({ label, value }: { label: string; value: unknown }) {
   return (
     <div className="flex justify-between gap-4 py-1.5 text-sm">
       <span className="text-base-content/60">{label}</span>
-      <span className="text-right font-medium tabular-nums">{text}</span>
+      <span className="min-w-0 text-right font-medium tabular-nums [overflow-wrap:anywhere]">
+        {text}
+      </span>
     </div>
   );
 }
@@ -123,7 +125,7 @@ export function MoveDetail({ moveId }: { moveId: string }) {
   );
 
   return (
-    <div className="space-y-5 pb-8">
+    <div className="min-w-0 max-w-full space-y-5 overflow-x-hidden pb-8">
       <Link to="/moves" className="btn btn-ghost btn-sm gap-1 px-1">
         <ArrowLeft className="size-4" />
         All moves
@@ -133,8 +135,12 @@ export function MoveDetail({ moveId }: { moveId: string }) {
         <div className="font-mono text-[11px] uppercase tracking-wide text-base-content/50">
           {move.projectDomain ?? move.projectName} · {move.type} · {move.source}
         </div>
-        <h1 className="text-xl font-bold leading-tight">{move.title}</h1>
-        <p className="text-sm text-base-content/70">{move.reason}</p>
+        <h1 className="text-xl font-bold leading-tight [overflow-wrap:anywhere]">
+          {move.title}
+        </h1>
+        <p className="text-sm text-base-content/70 [overflow-wrap:anywhere]">
+          {move.reason}
+        </p>
         <div className="flex flex-wrap items-center gap-1.5">
           <BucketBadge bucket={move.valueBucket} />
           <RiskBadge risk={move.riskTier} />
@@ -217,7 +223,7 @@ export function MoveDetail({ moveId }: { moveId: string }) {
       {verifyResult && move.status === "verify_failed" ? (
         <section className="space-y-1">
           <h3 className="text-sm font-semibold">Verification</h3>
-          <pre className="overflow-x-auto rounded-lg border border-error/30 bg-error/5 p-3 text-xs">
+          <pre className="max-w-full overflow-x-auto whitespace-pre-wrap break-all rounded-lg border border-error/30 bg-error/5 p-3 text-xs">
             {JSON.stringify(verifyResult, null, 2)}
           </pre>
         </section>

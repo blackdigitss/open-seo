@@ -75,6 +75,7 @@ const projectSchema = z.object({
   closeRate: z.number().min(0).max(1),
   siteConversionRate: z.number().min(0).max(1).nullable(),
   monthlyBudgetUsd: z.number().min(0).max(10_000),
+  autoApplySafe: z.boolean(),
   reviewsBusinessName: z.string().trim().max(200).nullable(),
   reviewsLocationName: z.string().trim().max(200).nullable(),
 });

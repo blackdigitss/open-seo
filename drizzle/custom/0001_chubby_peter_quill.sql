@@ -1,0 +1,1 @@
+ALTER TABLE `custom_project_settings` ADD `auto_apply_safe` integer DEFAULT false NOT NULL;

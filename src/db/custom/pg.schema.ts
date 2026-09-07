@@ -121,6 +121,7 @@ export const customProjectSettings = pgTable("custom_project_settings", {
   closeRate: real("close_rate").notNull().default(0.5),
   siteConversionRate: real("site_conversion_rate"),
   monthlyBudgetUsd: real("monthly_budget_usd").notNull().default(10),
+  autoApplySafe: boolean("auto_apply_safe").notNull().default(false),
   reviewsBusinessName: text("reviews_business_name"),
   reviewsLocationName: text("reviews_location_name"),
   indexnowKey: text("indexnow_key"),

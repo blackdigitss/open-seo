@@ -12,6 +12,8 @@ import { brandMonthlyJob } from "./brand-monthly";
 import { competitorGapMonthlyJob } from "./competitor-gap-monthly";
 import { brandVolumeMonthlyJob } from "./brand-volume-monthly";
 import { budgetWatchJob } from "./budget-watch";
+import { indexingWatchJob } from "./indexing-watch";
+import { autoApplyJob } from "./auto-apply";
 import { configSyncJob } from "./config-sync";
 
 export const jobs: readonly JobDefinition[] = [
@@ -19,6 +21,8 @@ export const jobs: readonly JobDefinition[] = [
   gscAppendJob,
   movesRefreshJob,
   verifyCrawlJob,
+  autoApplyJob,
+  indexingWatchJob,
   verdictsJob,
   weeklyPlanJob,
   reviewsScanJob,

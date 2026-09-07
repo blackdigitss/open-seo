@@ -1,0 +1,35 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // The SEO edge (src/custom/edge/worker.ts): applies approved title/meta
+  // rules on the way out of the origin. Routed only on zones with no other
+  // zone-routed Worker (routes and same-zone fetch() don't compose — see
+  // DECISIONS.md "Edge layer design"). walkersnotary.com qualifies; the
+  // officiant site is served by its own routed Worker and stays off.
+  //
+  // Deploy: pnpm exec wrangler deploy -c wrangler.edge.jsonc
+  // Kill fast: delete these routes, or set {"kill":true} in the host's
+  // custom:edge_rules KV key (picked up within ~60s).
+  "name": "open-seo-edge",
+  "main": "src/custom/edge/worker.ts",
+  "workers_dev": false,
+  "compatibility_date": "2025-09-02",
+  "observability": {
+    "enabled": true,
+  },
+  "routes": [
+    {
+      "pattern": "walkersnotary.com/*",
+      "zone_id": "53c064241dcf1eeb7de581e04fc5e5c9",
+    },
+    {
+      "pattern": "www.walkersnotary.com/*",
+      "zone_id": "53c064241dcf1eeb7de581e04fc5e5c9",
+    },
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "KV",
+      "id": "1597cbb99fe440d89a7df395da5de7e4",
+    },
+  ],
+}

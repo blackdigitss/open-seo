@@ -5,8 +5,17 @@
 // polices the app graph, and the custom Worker has no reason to carry one).
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+const GEMINI_URL =
+  "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 const DEFAULT_OPENROUTER_MODEL = "anthropic/claude-sonnet-4.5";
+const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash";
 const DEFAULT_WORKERS_AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+
+/** Google AI Studio keys all start with AIza; the same env var carries either
+ *  an OpenRouter or a Gemini key so there is one knob for all agents. */
+function isGeminiKey(key: string): boolean {
+  return key.startsWith("AIza");
+}
 
 type LlmRequest = {
   system: string;
@@ -32,16 +41,20 @@ export async function generateText(
   const temperature = request.temperature ?? 0.4;
 
   if (provider === "openrouter") {
-    const response = await fetch(OPENROUTER_URL, {
+    const key = env.OPENROUTER_API_KEY?.trim() ?? "";
+    const gemini = isGeminiKey(key);
+    const response = await fetch(gemini ? GEMINI_URL : OPENROUTER_URL, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
+        Authorization: `Bearer ${key}`,
         "Content-Type": "application/json",
         "HTTP-Referer": env.CUSTOM_APP_URL ?? "https://openseo.so",
         "X-Title": "OpenSEO fork",
       },
       body: JSON.stringify({
-        model: env.CUSTOM_LLM_MODEL?.trim() || DEFAULT_OPENROUTER_MODEL,
+        model:
+          env.CUSTOM_LLM_MODEL?.trim() ||
+          (gemini ? DEFAULT_GEMINI_MODEL : DEFAULT_OPENROUTER_MODEL),
         max_tokens: maxTokens,
         temperature,
         messages: [

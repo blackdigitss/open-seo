@@ -13,6 +13,8 @@
     "public/sw.js",
     // Aliased in by wrangler.custom.jsonc, so no import references it.
     "src/custom/tanstack-entry-stub.ts",
+    // The SEO edge worker (wrangler.edge.jsonc).
+    "src/custom/edge/worker.ts",
     "drizzle-custom.config.ts",
     "src/db/custom/schema.ts",
     "src/db/custom/pg.schema.ts",

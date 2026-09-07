@@ -1,4 +1,6 @@
 import { tool, type Tool, type ToolSet } from "ai";
+// FORK: fork-owned SAM tools (Moves + history).
+import { buildSamMovesTools } from "@/custom/sam/samMovesTools";
 import { z, type ZodRawShape } from "zod";
 import { withPgClient } from "@/db";
 import type { CallToolResult } from "@modelcontextprotocol/server";
@@ -329,6 +331,10 @@ export function buildSamMcpTools(
   // discovering other projects isn't part of its job — every project-scoped tool
   // below has `projectId` injected server-side by adaptMcpTool.
   return {
+    // FORK: the fork's Moves queue and analysis history, so SAM sees the same
+    // work list and trends the owner does. Spread first — upstream appends at
+    // the bottom of this literal.
+    ...buildSamMovesTools(authContext.organizationId, projectId),
     // On-demand product reference (kept out of the system prompt: inlining it
     // made the agent narrate hosted/self-hosted framing at signed-in users).
     get_product_info: tool({

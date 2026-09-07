@@ -15,6 +15,9 @@ declare namespace Cloudflare {
     CUSTOM_RUN_SECRET?: string;
     // "1" pauses every scheduled job.
     CUSTOM_JOBS_DISABLED?: string;
+    // Comma-separated hostnames the SEO edge Worker is routed on; auto-apply
+    // only ever touches these.
+    CUSTOM_EDGE_HOSTS?: string;
 
     // Loops transactional template for plans/events; auto-provisioned into KV
     // when unset and LOOPS_API_KEY exists.
