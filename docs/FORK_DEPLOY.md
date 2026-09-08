@@ -147,14 +147,12 @@ target a route). The right integration is INSIDE raw-router, and it's small:
    `return applyOpenSeoRules(response, url, env.OPENSEO_KV);`
    (The 3xx branch and asset responses are ignored by the module itself.)
 
-Nothing changes until a rule exists in KV for `www.robynashleyweddings.com`;
-the module is fail-open end to end. One nuance: raw-router sets
+**Wired and live since 2026-09-07** — the raw-router copy lives at
+`RAW/04-systems/deploy/cloudflare` (its own small git repo; revert = `git
+revert` the wiring commit + redeploy). Verified byte-identical on home,
+/about, /blog and /officiant-kit after deploy. One nuance: raw-router sets
 `s-maxage=600` on HTML, so an applied or killed rule can take up to ten
 minutes to reach every visitor — fine for SEO tags.
-
-After wiring, add `www.robynashleyweddings.com` to `CUSTOM_EDGE_HOSTS` in
-`wrangler.custom.jsonc` and redeploy the custom Worker so auto-apply may
-target it.
 
 ## After an upstream merge
 
