@@ -8,6 +8,7 @@ import { parseJson } from "@/custom/lib/json";
 import { errorMessage } from "@/custom/lib/log";
 import { listIntelProjects } from "@/custom/intel/context";
 import { readSitemapUrls } from "@/custom/intel/sitemap";
+import { GscService } from "@/server/features/gsc/services/GscService";
 import { notify } from "@/custom/notify";
 import { SettingsRepository } from "@/custom/settings/repository";
 import type { JobDefinition } from "./runner";
@@ -21,6 +22,29 @@ function hostOf(domain: string): string {
 
 function seenKey(projectId: string): string {
   return `custom:sitemap_seen:${projectId}`;
+}
+
+/** Google's URL-inspection verdicts, keyed by URL; empty when GSC isn't
+ *  connected or the grant is broken (the ping already happened either way). */
+async function googleCoverage(
+  projectId: string,
+  urls: string[],
+): Promise<Map<string, string>> {
+  const coverage = new Map<string, string>();
+  if (urls.length === 0) return coverage;
+  try {
+    const inspection = await GscService.inspectUrls({ projectId, urls });
+    for (const entry of inspection.results) {
+      const state = Reflect.get(
+        Reflect.get(entry.result ?? {}, "indexStatusResult") ?? {},
+        "coverageState",
+      );
+      if (typeof state === "string") coverage.set(entry.url, state);
+    }
+  } catch {
+    // No connection: nothing to report.
+  }
+  return coverage;
 }
 
 export const indexingWatchJob: JobDefinition = {
@@ -83,6 +107,11 @@ export const indexingWatchJob: JobDefinition = {
           if (ping.ok) submitted += indexable.length;
         }
 
+        // Google has no general submit API; what it does give us, free, is
+        // the URL Inspection verdict — so the notification says where each
+        // new page stands instead of leaving it to hope.
+        const coverage = await googleCoverage(project.id, indexable);
+
         await env.KV.put(
           seenKey(project.id),
           JSON.stringify([...seen, ...fresh]),
@@ -95,9 +124,14 @@ export const indexingWatchJob: JobDefinition = {
             kind: "event",
             title: `${indexable.length} new page${indexable.length === 1 ? "" : "s"} spotted — ${host}`,
             body:
-              indexable.map((url) => `- ${url}`).join("\n") +
+              indexable
+                .map((url) => {
+                  const state = coverage.get(url);
+                  return `- ${url}${state ? ` — Google: ${state}` : ""}`;
+                })
+                .join("\n") +
               (key && keyLive
-                ? "\n\nSubmitted to IndexNow so the engines hear about them today."
+                ? "\n\nSubmitted to IndexNow (Bing and friends hear about them today; Google finds them via the sitemap and the coverage above)."
                 : "\n\nAdd the IndexNow key file (see your Moves) and new pages get submitted automatically."),
           });
         }

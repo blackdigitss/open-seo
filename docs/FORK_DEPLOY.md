@@ -133,6 +133,29 @@ ledger, so each period runs once and a failure retries up to three times.
 To pause everything: `wrangler secret put CUSTOM_JOBS_DISABLED -c
 wrangler.custom.jsonc` and enter `1`.
 
+## RAW integration (robynashleyweddings.com)
+
+RAW is served by the account's own `raw-router` Worker via zone routes, and a
+second routed Worker cannot sit in front of it (same-zone `fetch()` can't
+target a route). The right integration is INSIDE raw-router, and it's small:
+
+1. In raw-router's wrangler config, bind the shared KV
+   (`OPENSEO_KV`, id `1597cbb99fe440d89a7df395da5de7e4`).
+2. Copy `src/custom/edge/embed.js` from this repo into raw-router as
+   `openseo-edge-embed.js`.
+3. In `fetchFromPages`, wrap the final non-redirect return:
+   `return applyOpenSeoRules(response, url, env.OPENSEO_KV);`
+   (The 3xx branch and asset responses are ignored by the module itself.)
+
+Nothing changes until a rule exists in KV for `www.robynashleyweddings.com`;
+the module is fail-open end to end. One nuance: raw-router sets
+`s-maxage=600` on HTML, so an applied or killed rule can take up to ten
+minutes to reach every visitor — fine for SEO tags.
+
+After wiring, add `www.robynashleyweddings.com` to `CUSTOM_EDGE_HOSTS` in
+`wrangler.custom.jsonc` and redeploy the custom Worker so auto-apply may
+target it.
+
 ## After an upstream merge
 
 ```bash

@@ -15,7 +15,10 @@
     "scripts",
     // FORK: a service worker, not app code — its globals (self, clients,
     // registration) aren't in scope for the app's lint config.
-    "public/sw.js"
+    "public/sw.js",
+    // FORK: plain-JS drop-in copied into raw-router (another repo); not part
+    // of this app's typed graph.
+    "src/custom/edge/embed.js"
   ],
   "rules": {
     "react/react-in-jsx-scope": "off",

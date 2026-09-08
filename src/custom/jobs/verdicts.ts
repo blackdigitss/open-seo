@@ -8,7 +8,9 @@ import { GscService } from "@/server/features/gsc/services/GscService";
 import { buildVerdict } from "@/custom/apply/verdict";
 import { errorMessage } from "@/custom/lib/log";
 import { dayKey, lastYearWindow, shiftDays } from "@/custom/lib/time";
+import { appendLearning } from "@/custom/intel/learnings";
 import { MovesRepository } from "@/custom/moves/repository";
+import { projectResearchLog, projects } from "@/db/schema";
 import { notify } from "@/custom/notify";
 import type { JobDefinition } from "./runner";
 import { dailyAfter } from "./schedule";
@@ -124,6 +126,34 @@ export const verdictsJob: JobDefinition = {
 
         await MovesRepository.conclude(move.id, verdict);
         concluded += 1;
+
+        // Feed the corpus: decisive outcomes only, with their sample size —
+        // the drafts read this back, and the project's research log keeps a
+        // human-visible line (SAM sees that log in every conversation).
+        if (verdict.reading === "improved" || verdict.reading === "declined") {
+          const [projectRow] = await db
+            .select({ domain: projects.domain })
+            .from(projects)
+            .where(eq(projects.id, move.projectId))
+            .limit(1);
+          await appendLearning(env, organizationId, {
+            at: now.toISOString(),
+            domain: projectRow?.domain ?? projectName,
+            source: move.source,
+            moveTitle: move.title,
+            reading: verdict.reading,
+            changePct: verdict.changePct,
+            seasonalChangePct: verdict.seasonalChangePct,
+            sampleClicks: verdict.before + verdict.after,
+          });
+          await db.insert(projectResearchLog).values({
+            id: crypto.randomUUID(),
+            projectId: move.projectId,
+            entryDate: dayKey(now),
+            summary: `Applied change verdict: "${move.title}" → ${verdict.reading} (${verdict.changePct === null ? "n/a" : Math.round(verdict.changePct * 100) + "%"} clicks, n=${verdict.before + verdict.after}). ${verdict.summary}`,
+            createdBy: "mcp",
+          });
+        }
 
         await notify(env, {
           organizationId,

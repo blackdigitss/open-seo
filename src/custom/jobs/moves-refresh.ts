@@ -14,6 +14,7 @@ import { normalizeUrl, type PageRole } from "@/custom/moves/producers/types";
 import type { MoveInput, MoveRow } from "@/custom/moves/types";
 import { formatBucket } from "@/custom/moves/score";
 import { notify } from "@/custom/notify";
+import { loadLearnings, renderLearnings } from "@/custom/intel/learnings";
 import { SettingsRepository } from "@/custom/settings/repository";
 import { createLogger, errorMessage } from "@/custom/lib/log";
 import type { JobDefinition } from "./runner";
@@ -82,7 +83,13 @@ export const movesRefreshJob: JobDefinition = {
     for (const project of rows) {
       const projectLog = createLogger(`moves:${project.name}`);
       const settings = await SettingsRepository.getProject(project.id);
-      const { pageRoles, voice } = await loadContext(project.id);
+      const { pageRoles, voice: baseVoice } = await loadContext(project.id);
+      // What has demonstrably worked (or not) across the portfolio rides
+      // along with the voice, so drafts learn from earlier verdicts.
+      const learnings = renderLearnings(
+        await loadLearnings(env, project.organizationId),
+      );
+      const voice = learnings ? `${baseVoice}\n\n${learnings}` : baseVoice;
       const economics = SettingsRepository.economicsFor(settings, null);
       const input = {
         env,

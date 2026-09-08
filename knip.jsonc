@@ -15,6 +15,8 @@
     "src/custom/tanstack-entry-stub.ts",
     // The SEO edge worker (wrangler.edge.jsonc).
     "src/custom/edge/worker.ts",
+    // Copied into raw-router by hand (docs/FORK_DEPLOY.md), never imported.
+    "src/custom/edge/embed.js",
     "drizzle-custom.config.ts",
     "src/db/custom/schema.ts",
     "src/db/custom/pg.schema.ts",
