@@ -41,6 +41,10 @@ export const MOVE_STATUSES = [
   "verify_failed",
   "resolved",
   "concluded",
+  // Real work, held back because a better Move on the same page already
+  // rewrites the surface it targets. The nightly reconcile pass reopens it
+  // once that Move is out of the way.
+  "superseded",
 ] as const;
 export const MOVE_VALUE_BUCKETS = ["low", "mid", "high"] as const;
 export const NOTIFICATION_KINDS = [
@@ -95,6 +99,9 @@ export const customMoves = sqliteTable(
     verifyResultJson: text("verify_result_json"),
     reviewAt: text("review_at"),
     verdictJson: text("verdict_json"),
+    // The Move on the same page that holds this one's surface. Set only while
+    // the status is "superseded"; no FK, so a deleted winner can't orphan a row.
+    supersededBy: text("superseded_by"),
     createdAt: text("created_at").notNull().default(now),
     updatedAt: text("updated_at").notNull().default(now),
   },

@@ -10,6 +10,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { listMoves } from "@/custom/serverFunctions/moves";
+import { groupByPage } from "@/custom/moves/pageGroup";
 import type { MoveRow, MoveStatus } from "@/custom/moves/types";
 import { BucketBadge, RiskBadge, StatusBadge } from "./MoveBadges";
 import { pathOf } from "./format";
@@ -17,6 +18,7 @@ import { pathOf } from "./format";
 const FILTERS: Array<{ label: string; statuses: MoveStatus[] }> = [
   { label: "To do", statuses: ["open"] },
   { label: "In flight", statuses: ["applied", "verified", "verify_failed"] },
+  { label: "Waiting", statuses: ["superseded"] },
   { label: "Done", statuses: ["concluded", "skipped", "resolved"] },
 ];
 
@@ -58,15 +60,17 @@ const SOURCE_META: Record<
 function MoveCard({
   move,
   showProject,
+  showPage,
 }: {
   move: MoveRow & { projectName: string; projectDomain: string | null };
   showProject: boolean;
+  showPage: boolean;
 }) {
   const meta = SOURCE_META[move.source] ?? SOURCE_META.manual;
   const Icon = meta.icon;
   const where = [
     showProject ? (move.projectDomain ?? move.projectName) : null,
-    move.targetUrl ? pathOf(move.targetUrl) : null,
+    showPage && move.targetUrl ? pathOf(move.targetUrl) : null,
     move.targetQuery ? `"${move.targetQuery}"` : null,
   ]
     .filter(Boolean)
@@ -117,6 +121,13 @@ export function MovesList({ projectId }: { projectId?: string }) {
   });
 
   const moves = movesQuery.data ?? [];
+  // A page is what the owner opens and edits, so the work on one page arrives
+  // together and in the order it makes sense in, rather than scattered down a
+  // list by score.
+  const groups = React.useMemo(
+    () => groupByPage(movesQuery.data ?? []),
+    [movesQuery.data],
+  );
 
   return (
     <div className="space-y-4">
@@ -153,10 +164,30 @@ export function MovesList({ projectId }: { projectId?: string }) {
           </div>
         </div>
       ) : (
-        <ul className="flex flex-col gap-2.5">
-          {moves.map((move) => (
-            <li key={move.id}>
-              <MoveCard move={move} showProject={!projectId} />
+        <ul className="flex flex-col gap-4">
+          {groups.map((group) => (
+            <li key={group.key || "no-page"}>
+              {group.key && group.moves.length > 1 ? (
+                <div className="mb-1.5 flex items-baseline justify-between gap-2 px-0.5">
+                  <span className="truncate font-mono text-xs text-base-content/70">
+                    {pathOf(group.url)}
+                  </span>
+                  <span className="shrink-0 text-xs text-base-content/50">
+                    {group.moves.length} moves · one editing session
+                  </span>
+                </div>
+              ) : null}
+              <ul className="flex flex-col gap-2.5">
+                {group.moves.map((move) => (
+                  <li key={move.id}>
+                    <MoveCard
+                      move={move}
+                      showProject={!projectId}
+                      showPage={!group.key || group.moves.length === 1}
+                    />
+                  </li>
+                ))}
+              </ul>
             </li>
           ))}
         </ul>

@@ -50,6 +50,7 @@ export const STATUS_LABELS: Record<string, string> = {
   verify_failed: "Not verified",
   skipped: "Skipped",
   resolved: "Resolved on its own",
+  superseded: "Waiting its turn",
   concluded: "Concluded",
 };
 
@@ -78,6 +79,8 @@ export function statusBadgeClass(status: string): string {
       return "badge-info";
     case "concluded":
       return "badge-neutral";
+    case "superseded":
+      return "badge-outline";
     default:
       return "badge-ghost";
   }

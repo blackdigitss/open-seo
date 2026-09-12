@@ -15,6 +15,7 @@ import { parseJson } from "@/custom/lib/json";
 import { errorMessage } from "@/custom/lib/log";
 import { isoNow } from "@/custom/lib/time";
 import { listIntelProjects } from "@/custom/intel/context";
+import { isExclusive, pageKey, surfacesOf } from "@/custom/moves/pageGroup";
 import { MovesRepository } from "@/custom/moves/repository";
 import { notify } from "@/custom/notify";
 import { SettingsRepository } from "@/custom/settings/repository";
@@ -62,15 +63,35 @@ export const autoApplyJob: JobDefinition = {
 
       try {
         const open = await MovesRepository.listOpenForProject(project.id, 50);
-        const candidates = open
-          .filter(
-            (move) =>
-              move.riskTier === "safe" &&
-              AUTO_SOURCES.has(move.source) &&
-              move.snippet &&
-              move.targetUrl &&
-              hostOf(move.targetUrl) === host,
-          )
+        const eligible = open.filter(
+          (move) =>
+            move.riskTier === "safe" &&
+            AUTO_SOURCES.has(move.source) &&
+            move.snippet &&
+            move.targetUrl &&
+            hostOf(move.targetUrl) === host,
+        );
+        // The nightly reconcile pass should already have left one writer per
+        // page surface, but this is the path that changes a live site without
+        // asking, so it checks for itself. Two Moves rewriting one page's title
+        // can't both be true: the edge would keep the last one and the other
+        // would be marked applied, fail its verification, and drag a bogus
+        // verdict into the learnings corpus.
+        const claimed = new Set<string>();
+        const candidates = eligible
+          .filter((move) => {
+            const path = pageKey(move.targetUrl);
+            const surfaces = surfacesOf(move).filter(isExclusive);
+            if (surfaces.some((surface) => claimed.has(`${path}|${surface}`))) {
+              log("skipping: another move already writes this surface", {
+                move: move.id,
+                path,
+              });
+              return false;
+            }
+            for (const surface of surfaces) claimed.add(`${path}|${surface}`);
+            return true;
+          })
           .slice(0, MAX_PER_PROJECT_PER_DAY);
         if (candidates.length === 0) continue;
 

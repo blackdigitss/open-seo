@@ -10,6 +10,7 @@ import { MovesRepository } from "@/custom/moves/repository";
 import { produceAuditMoves } from "@/custom/moves/producers/audit";
 import { produceDecay } from "@/custom/moves/producers/decay";
 import { produceOpenings } from "@/custom/moves/producers/openings";
+import { planReconcile } from "@/custom/moves/reconcile";
 import { normalizeUrl, type PageRole } from "@/custom/moves/producers/types";
 import type { MoveInput, MoveRow } from "@/custom/moves/types";
 import { formatBucket } from "@/custom/moves/score";
@@ -79,6 +80,8 @@ export const movesRefreshJob: JobDefinition = {
     let created = 0;
     let refreshed = 0;
     let resolved = 0;
+    let superseded = 0;
+    let reopened = 0;
 
     for (const project of rows) {
       const projectLog = createLogger(`moves:${project.name}`);
@@ -146,8 +149,31 @@ export const movesRefreshJob: JobDefinition = {
         }
       }
 
+      // Producers are blind to each other, so the same page can end the night
+      // with two Moves rewriting its title. One pass over the project settles
+      // who holds each page surface before anything reaches the owner — or
+      // auto-apply.
+      const held = new Set<string>();
+      try {
+        const plan = planReconcile(
+          await MovesRepository.listReconcilable(project.id),
+        );
+        for (const step of plan.supersede) {
+          await MovesRepository.supersede(step.moveId, step.supersededBy);
+          held.add(step.moveId);
+        }
+        await MovesRepository.reopenSuperseded(plan.reopen);
+        superseded += plan.supersede.length;
+        reopened += plan.reopen.length;
+      } catch (error) {
+        projectLog("reconcile failed", { error: errorMessage(error) });
+      }
+
       // One message per project per run, and only for Moves worth stopping for.
-      const worthTelling = fresh.filter((move) => move.score >= NOTIFY_SCORE);
+      // A Move that just stepped aside behind a better one is not news.
+      const worthTelling = fresh.filter(
+        (move) => move.score >= NOTIFY_SCORE && !held.has(move.id),
+      );
       if (worthTelling.length > 0) {
         const label = project.domain ?? project.name;
         await notify(env, {
@@ -170,7 +196,14 @@ export const movesRefreshJob: JobDefinition = {
       }
     }
 
-    log("done", { created, refreshed, resolved });
-    return { projects: rows.length, created, refreshed, resolved };
+    log("done", { created, refreshed, resolved, superseded, reopened });
+    return {
+      projects: rows.length,
+      created,
+      refreshed,
+      resolved,
+      superseded,
+      reopened,
+    };
   },
 };

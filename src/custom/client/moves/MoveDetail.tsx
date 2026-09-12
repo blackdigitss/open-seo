@@ -32,6 +32,18 @@ const EVIDENCE_LABELS: Record<string, string> = {
   keyFile: "File to add",
 };
 
+/** The parts of an opening's evidence the page-aware sections render. Stored
+ *  JSON, so every list is checked before it is mapped over. */
+type PageEvidence = {
+  queries?: Array<{ query: string; impressions: number; position: number }>;
+  otherIntents?: Array<{ query: string; impressions: number }>;
+  competingPages?: Array<{ page: string; position: number }>;
+};
+
+function rows<T>(value: T[] | undefined): T[] {
+  return Array.isArray(value) ? value : [];
+}
+
 function EvidenceRow({ label, value }: { label: string; value: unknown }) {
   const text =
     typeof value === "number"
@@ -109,7 +121,14 @@ export function MoveDetail({ moveId }: { moveId: string }) {
   }
 
   const move = moveQuery.data;
-  const evidence = parseJson<Record<string, unknown>>(move.evidenceJson, {});
+  const evidence = parseJson<Record<string, unknown> & PageEvidence>(
+    move.evidenceJson,
+    {},
+  );
+  const queries = rows(evidence.queries);
+  const otherIntents = rows(evidence.otherIntents);
+  const competingPages = rows(evidence.competingPages);
+  const blocker = move.siblings.find((row) => row.id === move.supersededBy);
   const verdict = move.verdictJson
     ? parseJson<Verdict | null>(move.verdictJson, null)
     : null;
@@ -152,7 +171,22 @@ export function MoveDetail({ moveId }: { moveId: string }) {
         {move.hypothesis}
       </p>
 
-      {move.status === "open" ? (
+      {blocker ? (
+        <div className="rounded-lg border border-base-300 bg-base-200/50 p-3 text-sm">
+          <span className="font-semibold">Waiting its turn. </span>
+          This page&rsquo;s title is already being rewritten by{" "}
+          <Link
+            to="/moves/$moveId"
+            params={{ moveId: blocker.id }}
+            className="link link-primary"
+          >
+            {blocker.title}
+          </Link>
+          . Do that one first — this comes back on its own once it&rsquo;s done.
+        </div>
+      ) : null}
+
+      {move.status === "open" || move.status === "superseded" ? (
         <div className="flex gap-2">
           <button
             type="button"
@@ -208,6 +242,95 @@ export function MoveDetail({ moveId }: { moveId: string }) {
               />
             ))}
           </div>
+        </section>
+      ) : null}
+
+      {queries.length > 1 ? (
+        <section className="space-y-1">
+          <h3 className="text-sm font-semibold">
+            One edit, {queries.length} searches
+          </h3>
+          <p className="text-sm text-base-content/60">
+            Different wordings of the same question. The title leads with the
+            first; the copy has to satisfy all of them.
+          </p>
+          <div className="divide-y divide-base-300 rounded-lg border border-base-300 px-3">
+            {queries.map((row) => (
+              <EvidenceRow
+                key={row.query}
+                label={`"${row.query}"`}
+                value={`${row.impressions.toLocaleString()} impr · pos ${row.position}`}
+              />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {otherIntents.length > 0 ? (
+        <section className="space-y-1">
+          <h3 className="text-sm font-semibold">This page is doing two jobs</h3>
+          <p className="text-sm text-base-content/60">
+            It also ranks for a different question this title can&rsquo;t answer
+            as well. That one wants a page of its own.
+          </p>
+          <div className="divide-y divide-base-300 rounded-lg border border-base-300 px-3">
+            {otherIntents.map((row) => (
+              <EvidenceRow
+                key={row.query}
+                label={`"${row.query}"`}
+                value={`${row.impressions.toLocaleString()} impr`}
+              />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {competingPages.length > 0 ? (
+        <section className="space-y-1">
+          <h3 className="text-sm font-semibold">
+            Your pages are competing with each other
+          </h3>
+          <p className="text-sm text-base-content/60">
+            These also rank for the same search. Pick one page to win it and
+            point the others at it, rather than splitting the site&rsquo;s
+            authority between them.
+          </p>
+          <div className="divide-y divide-base-300 rounded-lg border border-base-300 px-3">
+            {competingPages.map((row) => (
+              <EvidenceRow
+                key={row.page}
+                label={pathOf(row.page)}
+                value={`pos ${row.position}`}
+              />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {move.siblings.length > 0 ? (
+        <section className="space-y-1">
+          <h3 className="text-sm font-semibold">
+            Also open on {pathOf(move.targetUrl) || "this page"}
+          </h3>
+          <p className="text-sm text-base-content/60">
+            In the order they make sense in. Do them in one pass.
+          </p>
+          <ul className="divide-y divide-base-300 rounded-lg border border-base-300">
+            {move.siblings.map((sibling) => (
+              <li key={sibling.id}>
+                <Link
+                  to="/moves/$moveId"
+                  params={{ moveId: sibling.id }}
+                  className="flex items-center justify-between gap-3 px-3 py-2 text-sm hover:bg-base-200/60"
+                >
+                  <span className="min-w-0 flex-1 truncate">
+                    {sibling.title}
+                  </span>
+                  <StatusBadge status={sibling.status} />
+                </Link>
+              </li>
+            ))}
+          </ul>
         </section>
       ) : null}
 

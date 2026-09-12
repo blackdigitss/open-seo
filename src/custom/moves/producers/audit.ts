@@ -99,7 +99,9 @@ export async function produceAuditMoves(
     if (needsCopy) {
       drafted += 1;
       const draft = await draftTitleAndMeta(input.env, {
-        query: pathOf(pageUrl).replace(/[-/]+/g, " ").trim() || businessName,
+        queries: [
+          pathOf(pageUrl).replace(/[-/]+/g, " ").trim() || businessName,
+        ],
         url: pageUrl,
         businessName,
         voice: input.voice,

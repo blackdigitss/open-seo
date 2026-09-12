@@ -5,7 +5,9 @@ import { customMoves } from "@/db/custom/schema";
 import { isoNow, shiftDays } from "@/custom/lib/time";
 import type { MoveInput, MoveRow, MoveStatus, Verdict } from "./types";
 
-const OPEN_STATUSES = ["open"] as const;
+// A superseded Move is still a live finding — it just isn't the one to do
+// first — so producers refresh it and resolve it like an open one.
+const OPEN_STATUSES = ["open", "superseded"] as const;
 const ACTIVE_STATUSES = [
   "open",
   "applied",
@@ -59,11 +61,14 @@ async function upsert(
     .limit(1);
 
   if (existing) {
-    if (existing.status !== "open" && existing.status !== "resolved") {
-      return { row: existing, created: false };
-    }
+    const refreshable =
+      existing.status === "open" ||
+      existing.status === "resolved" ||
+      existing.status === "superseded";
+    if (!refreshable) return { row: existing, created: false };
     const values = rowFromInput(input, now);
-    // A resolved signal that came back reopens.
+    // A resolved signal that came back reopens. A superseded one keeps its
+    // status and winner; tonight's reconcile pass re-decides that.
     const [row] = await db
       .update(customMoves)
       .set({
@@ -71,7 +76,7 @@ async function upsert(
         // Keep an LLM draft the first run produced if the producer has none now.
         draft: values.draft ?? existing.draft,
         snippet: values.snippet ?? existing.snippet,
-        status: "open",
+        status: existing.status === "superseded" ? "superseded" : "open",
       })
       .where(eq(customMoves.id, existing.id))
       .returning();
@@ -197,6 +202,36 @@ async function listOpenForProject(projectId: string, limit = 50) {
     .limit(limit);
 }
 
+/** Everything the nightly reconcile pass arbitrates over: what is open now plus
+ *  what stepped aside earlier, so a Move can come back when its winner is done. */
+async function listReconcilable(projectId: string) {
+  return db
+    .select()
+    .from(customMoves)
+    .where(
+      and(
+        eq(customMoves.projectId, projectId),
+        inArray(customMoves.status, [...OPEN_STATUSES]),
+      ),
+    );
+}
+
+/** Hold a Move back behind the Move that already rewrites its surface. */
+async function supersede(moveId: string, supersededBy: string) {
+  await db
+    .update(customMoves)
+    .set({ status: "superseded", supersededBy, updatedAt: isoNow() })
+    .where(eq(customMoves.id, moveId));
+}
+
+async function reopenSuperseded(moveIds: string[]) {
+  if (moveIds.length === 0) return;
+  await db
+    .update(customMoves)
+    .set({ status: "open", supersededBy: null, updatedAt: isoNow() })
+    .where(inArray(customMoves.id, moveIds));
+}
+
 async function countByStatusForProjects(projectIds: string[]) {
   if (projectIds.length === 0) return [];
   return db
@@ -217,6 +252,7 @@ async function markApplied(moveId: string, reviewAfterDays = 28) {
     .update(customMoves)
     .set({
       status: "applied",
+      supersededBy: null,
       appliedAt: now.toISOString(),
       reviewAt: shiftDays(now.toISOString().slice(0, 10), reviewAfterDays),
       updatedAt: now.toISOString(),
@@ -229,7 +265,7 @@ async function markApplied(moveId: string, reviewAfterDays = 28) {
 async function setStatus(moveId: string, status: MoveStatus) {
   const [row] = await db
     .update(customMoves)
-    .set({ status, updatedAt: isoNow() })
+    .set({ status, supersededBy: null, updatedAt: isoNow() })
     .where(eq(customMoves.id, moveId))
     .returning();
   return row ?? null;
@@ -309,6 +345,9 @@ export const MovesRepository = {
   getForOrganization,
   listForOrganization,
   listOpenForProject,
+  listReconcilable,
+  supersede,
+  reopenSuperseded,
   countByStatusForProjects,
   markApplied,
   setStatus,

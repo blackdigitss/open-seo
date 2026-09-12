@@ -3,6 +3,7 @@ import { z } from "zod";
 import { AppError } from "@/server/lib/errors";
 import { requireAuthenticatedContext } from "@/serverFunctions/middleware";
 import { MOVE_STATUSES } from "@/db/custom/schema";
+import { pageKey, sequencePage } from "@/custom/moves/pageGroup";
 import { MovesRepository } from "@/custom/moves/repository";
 import type { MoveStatus } from "@/custom/moves/types";
 
@@ -25,6 +26,10 @@ export const listMoves = createServerFn({ method: "POST" })
     }),
   );
 
+/** The Move, plus everything else still live on the same page. A page is what
+ *  the owner actually opens and edits, so the detail view shows the whole
+ *  session — including the Move that is holding this one back, when there is
+ *  one. */
 export const getMove = createServerFn({ method: "POST" })
   .middleware(requireAuthenticatedContext)
   .validator(moveIdSchema)
@@ -34,7 +39,15 @@ export const getMove = createServerFn({ method: "POST" })
       data.moveId,
     );
     if (!move) throw new AppError("NOT_FOUND", "Move not found");
-    return move;
+    if (!move.targetUrl) return { ...move, siblings: [] };
+
+    const key = pageKey(move.targetUrl);
+    const siblings = sequencePage(
+      (await MovesRepository.listReconcilable(move.projectId)).filter(
+        (row) => row.id !== move.id && pageKey(row.targetUrl) === key,
+      ),
+    );
+    return { ...move, siblings };
   });
 
 /** Marks a Move done: stamps the time, sets the review date, and queues

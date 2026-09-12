@@ -57,6 +57,9 @@ export const customMoves = pgTable(
     verifyResultJson: text("verify_result_json"),
     reviewAt: text("review_at"),
     verdictJson: text("verdict_json"),
+    // The Move on the same page that holds this one's surface. Set only while
+    // the status is "superseded"; no FK, so a deleted winner can't orphan a row.
+    supersededBy: text("superseded_by"),
     createdAt: text("created_at").notNull().default(isoNow),
     updatedAt: text("updated_at").notNull().default(isoNow),
   },

@@ -1,0 +1,1 @@
+ALTER TABLE `custom_moves` ADD `superseded_by` text;

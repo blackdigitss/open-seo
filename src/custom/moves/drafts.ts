@@ -27,26 +27,29 @@ function truncate(value: string, max: number): string {
 }
 
 function templateTitleAndMeta(input: {
-  query: string;
+  queries: string[];
   businessName: string;
   url: string;
 }): TitleAndMeta {
-  const subject = titleCase(input.query);
+  const subject = titleCase(input.queries[0] ?? "");
   return {
     title: truncate(`${subject} | ${input.businessName}`, 60),
     metaDescription: truncate(
       `${subject} from ${input.businessName}. See what's included, how it works, and how to get in touch.`,
       160,
     ),
-    paragraph: `Add a short section to ${pathOf(input.url)} that answers "${input.query}" directly in the first sentence, then covers what's included and what it costs to get started.`,
+    paragraph: `Add a short section to ${pathOf(input.url)} that answers "${input.queries[0] ?? ""}" directly in the first sentence, then covers what's included and what it costs to get started.`,
   };
 }
 
-/** Proposed title/meta/paragraph for a page targeting `query`. */
+/** Proposed title/meta/paragraph for a page. `queries` is one intent's worth of
+ *  searches — the first is what the title leads with, the rest are wordings the
+ *  same page has to satisfy. Passing the whole cluster is the point: one title
+ *  written against ten phrasings beats ten titles written against one each. */
 export async function draftTitleAndMeta(
   env: Cloudflare.Env,
   input: {
-    query: string;
+    queries: string[];
     url: string;
     businessName: string;
     voice: string;
@@ -54,6 +57,7 @@ export async function draftTitleAndMeta(
   },
 ): Promise<TitleAndMeta> {
   const fallback = templateTitleAndMeta(input);
+  const [lead, ...also] = input.queries;
   const generated = await generateJson<Partial<TitleAndMeta>>(env, {
     system: SYSTEM,
     prompt: [
@@ -61,7 +65,13 @@ export async function draftTitleAndMeta(
       input.voice ? `Voice and context:\n${input.voice}` : "",
       `Page: ${input.url}`,
       input.currentTitle ? `Current title: ${input.currentTitle}` : "",
-      `Target search: "${input.query}"`,
+      `Target search: "${lead}"`,
+      also.length > 0
+        ? `The same page also has to serve these wordings of the same question, without stuffing them into the title: ${also
+            .slice(0, 8)
+            .map((q) => `"${q}"`)
+            .join(", ")}`
+        : "",
       "",
       'Return {"title": string, "metaDescription": string, "paragraph": string} where paragraph is 2-3 sentences to add to the page that answer the search directly.',
     ]
